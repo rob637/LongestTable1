@@ -1,0 +1,149 @@
+{% extends "admin/base.html" %}
+{% block title %}Donations — Admin{% endblock %}
+{% block content %}
+<h1>Donations</h1>
+<p class="muted">
+  Record donations as they land in Venmo / PayPal, attach them to orders, and
+  reconcile pledged vs paid. Download the donor report any time for Rustic Love.
+</p>
+
+<div class="stat-grid" style="margin:1rem 0">
+  <div class="stat">
+    <div class="label">Pledged</div>
+    <div class="num">${{ '{:,.0f}'.format(summary.pledged_cents / 100) }}</div>
+  </div>
+  <div class="stat">
+    <div class="label">Received</div>
+    <div class="num">${{ '{:,.0f}'.format(summary.paid_cents / 100) }}</div>
+  </div>
+  <div class="stat">
+    <div class="label">Unmatched</div>
+    <div class="num">${{ '{:,.0f}'.format(summary.unmatched_cents / 100) }}</div>
+    <div class="muted" style="font-size:0.85em">{{ summary.unmatched|length }} donation{{ '' if summary.unmatched|length == 1 else 's' }}</div>
+  </div>
+  <div class="stat">
+    <div class="label">Owed by guests</div>
+    {% set owed_cents = 0 %}
+    {% for r in summary.under %}{% set owed_cents = owed_cents + (r.pledged_cents - r.paid_cents) %}{% endfor %}
+    <div class="num">${{ '{:,.0f}'.format(owed_cents / 100) }}</div>
+    <div class="muted" style="font-size:0.85em">{{ summary.under|length }} order{{ '' if summary.under|length == 1 else 's' }}</div>
+  </div>
+</div>
+
+<div class="row" style="gap:0.5rem; margin-bottom:1.5rem">
+  <a class="btn btn-secondary" href="{{ url_for('admin.donations_report') }}">⬇ Download donor report (CSV)</a>
+</div>
+
+{% if summary.unmatched %}
+<div class="card" style="border-left:4px solid var(--terracotta); margin-bottom:1.5rem">
+  <h3 style="margin-top:0">Unmatched donations ({{ summary.unmatched|length }})</h3>
+  <p class="muted" style="margin-top:0">Attach each to an order, or delete if it isn't a TLTV donation.</p>
+  <table class="data-table">
+    <thead><tr><th>When</th><th>Source</th><th>Amount</th><th>Donor / note</th><th style="width:34%">Attach to order</th></tr></thead>
+    <tbody>
+      {% for d in summary.unmatched %}
+      <tr>
+        <td class="muted">{{ d.received_at }}</td>
+        <td>{{ d.source }}</td>
+        <td><strong>${{ '%.2f' % (d.amount_cents / 100) }}</strong></td>
+        <td>
+          {{ d.donor_name or '—' }}
+          {% if d.donor_email %}<div class="muted" style="font-size:0.85em">{{ d.donor_email }}</div>{% endif %}
+          {% if d.note %}<div class="muted" style="font-size:0.85em">{{ d.note }}</div>{% endif %}
+        </td>
+        <td>
+          {% if d.id %}
+          <form method="POST" action="{{ url_for('admin.donations_assign', did=d.id) }}" style="display:flex; gap:0.4rem">
+            <input type="text" name="order_code" placeholder="ABC123" style="text-transform:uppercase; flex:1"/>
+            <button class="btn btn-primary" style="padding:0.4rem 0.8rem">Attach</button>
+            <button class="btn btn-ghost" type="submit" formaction="{{ url_for('admin.donations_delete', did=d.id) }}" onclick="return confirm('Delete this donation?')" style="padding:0.4rem 0.6rem">×</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if summary.under %}
+<div class="card" style="margin-bottom:1.5rem">
+  <h3 style="margin-top:0">Pledges not yet received ({{ summary.under|length }})</h3>
+  <table class="data-table">
+    <thead><tr><th>Order</th><th>Buyer</th><th>Email</th><th>Pledged</th><th>Paid</th><th>Owes</th></tr></thead>
+    <tbody>
+      {% for r in summary.under %}
+      <tr>
+        <td><code>{{ r.order_code }}</code></td>
+        <td>{{ r.buyer }}</td>
+        <td>{% if r.buyer_email %}<a href="mailto:{{ r.buyer_email }}">{{ r.buyer_email }}</a>{% endif %}</td>
+        <td>${{ '%.2f' % (r.pledged_cents / 100) }}</td>
+        <td>${{ '%.2f' % (r.paid_cents / 100) }}</td>
+        <td><strong>${{ '%.2f' % ((r.pledged_cents - r.paid_cents) / 100) }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="card" style="max-width:640px; margin-bottom:2rem">
+  <h3>Record a donation</h3>
+  <form method="POST" action="{{ url_for('admin.donations_create') }}">
+    <div class="field-row">
+      <div class="field"><label>Order code</label><input name="order_code" placeholder="optional" style="text-transform:uppercase"/></div>
+      <div class="field"><label>Amount (USD)</label><input name="amount" type="number" step="0.01" min="0" required/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Source</label>
+        <select name="source">
+          <option value="venmo">Venmo</option>
+          <option value="paypal">PayPal</option>
+          <option value="cash">Cash</option>
+          <option value="check">Check</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Transaction ID</label><input name="transaction_id"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Donor name</label><input name="donor_name"/></div>
+      <div class="field"><label>Donor email</label><input name="donor_email" type="email"/></div>
+    </div>
+    <div class="field"><label>Note</label><input name="note"/></div>
+    <button class="btn btn-primary">Record</button>
+  </form>
+</div>
+
+<h3>Recent donations</h3>
+<table class="data-table">
+  <thead><tr><th>When</th><th>Order</th><th>Source</th><th>Amount</th><th>Donor</th><th>Note</th><th></th></tr></thead>
+  <tbody>
+    {% for d in donations %}
+    <tr>
+      <td class="muted">{{ d.received_at }}</td>
+      <td>{% if d.order_code %}<code>{{ d.order_code }}</code>{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td>{{ d.source }}</td>
+      <td>${{ '%.2f' % (d.amount_cents / 100) }}</td>
+      <td>{{ d.donor_name or '—' }}</td>
+      <td class="muted">{{ d.note or '' }}</td>
+      <td>
+        {% if d.id %}
+        <details>
+          <summary class="btn btn-ghost" style="padding:0.2rem 0.5rem; cursor:pointer">Edit</summary>
+          <form method="POST" action="{{ url_for('admin.donations_assign', did=d.id) }}" style="display:flex; gap:0.3rem; margin-top:0.3rem">
+            <input type="text" name="order_code" value="{{ d.order_code or '' }}" placeholder="(unmatch)" style="text-transform:uppercase; max-width:120px"/>
+            <button class="btn btn-primary" style="padding:0.2rem 0.5rem">Save</button>
+            <button class="btn btn-ghost" type="submit" formaction="{{ url_for('admin.donations_delete', did=d.id) }}" onclick="return confirm('Delete this donation?')" style="padding:0.2rem 0.5rem">×</button>
+          </form>
+        </details>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="muted center">No donations recorded yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

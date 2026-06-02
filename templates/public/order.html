@@ -1,0 +1,87 @@
+{% extends "public/base.html" %}
+{% block title %}Order {{ data.order.order_code }} — {{ event.event_name }}{% endblock %}
+{% block content %}
+<section class="band">
+  <div class="container-sm">
+    <div class="card">
+      <div class="row" style="justify-content:space-between; align-items:flex-start">
+        <div>
+          <div class="eyebrow">Order {{ data.order.order_code }}</div>
+          <h1 style="margin-bottom:0.25em">{{ data.order.buyer_first }} {{ data.order.buyer_last }}</h1>
+          <p class="muted">{{ data.order.buyer_email }} · {{ data.order.buyer_phone or '—' }}</p>
+        </div>
+        <span class="pill pill-{{ data.order.status }}">{{ data.order.status }}</span>
+      </div>
+
+      {% if data.order.status == 'waitlist' %}
+        <div class="banner" style="background:#fdeeb8; border:1px solid #f5d271; padding:1rem; border-radius:var(--radius-sm); margin:1rem 0">
+          <strong>You're a Flex Participant.</strong> The event hit our seat
+          goal, so we've reserved your spot in line. There's a seat for you at
+          the long table — your specific table assignment will be finalized a
+          few days before the event, or sooner if a Table Captain pulls you in.
+        </div>
+      {% endif %}
+
+      <div class="hero-meta" style="margin:1.5rem 0">
+        <div class="item"><span class="k">When</span><span class="v">{{ event.event_date }}</span></div>
+        <div class="item"><span class="k">Where</span><span class="v">{{ event.event_location }}</span></div>
+        <div class="item"><span class="k">Party size</span><span class="v">{{ data.order.party_size }}</span></div>
+        <div class="item"><span class="k">Pledged</span><span class="v">${{ '%.0f' % (data.order.pledged_donation_cents / 100) }}</span></div>
+        <div class="item"><span class="k">Paid</span><span class="v">${{ '%.2f' % (data.paid_total_cents / 100) }}</span></div>
+      </div>
+
+      <h3>Attendees</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Age</th><th>Accom.</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for a in data.attendees %}
+          <tr>
+            <td>{{ a.first_name }} {{ a.last_name }}{% if a.is_captain %} <span class="pill pill-confirmed">Captain</span>{% endif %}</td>
+            <td>{{ a.email }}</td>
+            <td>{{ a.age_range }}</td>
+            <td>{{ a.accommodations or '—' }}</td>
+            <td>
+              {% if data.attendees|length > 1 %}
+              <form method="POST" action="{{ url_for('public.order_remove_attendee', token=token, pid=a.id) }}" onsubmit="return confirm('Remove {{ a.first_name }} from this order?')" style="display:inline">
+                <button class="btn btn-ghost" style="padding:0.3rem 0.7rem; min-height:auto">Remove</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="row" style="margin-top:1.5rem; justify-content:space-between">
+        <a class="btn btn-primary" href="{{ url_for('public.donate', order_code=data.order.order_code) }}">Donate / Re-show QR</a>
+        {% if data.order.is_captain_order %}
+        <a class="btn btn-secondary" href="{{ url_for('captain.login') }}">Open Captain dashboard</a>
+        {% endif %}
+        <form method="POST" action="{{ url_for('public.order_cancel', token=token) }}" onsubmit="return confirm('Cancel your entire order? This cannot be undone.')">
+          <button class="btn btn-secondary">Cancel entire order</button>
+        </form>
+      </div>
+    </div>
+
+    {% if data.donations %}
+    <div class="card">
+      <h3>Donations received</h3>
+      <table class="data-table">
+        <thead><tr><th>When</th><th>Source</th><th>Amount</th></tr></thead>
+        <tbody>
+          {% for d in data.donations %}
+          <tr>
+            <td>{{ d.received_at }}</td>
+            <td>{{ d.source }}</td>
+            <td>${{ '%.2f' % (d.amount_cents / 100) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

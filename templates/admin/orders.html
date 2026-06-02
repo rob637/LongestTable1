@@ -1,0 +1,62 @@
+{% extends "admin/base.html" %}
+{% block title %}Orders — Admin{% endblock %}
+{% block content %}
+<h1>Orders</h1>
+
+<form method="GET" class="row" style="margin-bottom:1.5rem">
+  <input name="q" placeholder="Search name, email, code…" value="{{ q or '' }}" style="flex:1; padding:0.6rem; border:1px solid var(--line); border-radius:8px"/>
+  <select name="status" style="padding:0.6rem; border:1px solid var(--line); border-radius:8px">
+    <option value="">All statuses</option>
+    {% for s in ['confirmed','waitlist','cancelled'] %}
+      <option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ 'flex' if s == 'waitlist' else s }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-secondary">Filter</button>
+  <a class="btn btn-ghost" href="{{ url_for('admin.orders_export') }}">Export CSV</a>
+  {% set emails = orders|map(attribute='buyer_email')|select|list|unique|list %}
+  {% if emails %}
+    <a class="btn btn-ghost" href="mailto:?bcc={{ emails|join(',') }}">Email {{ emails|length }} buyer{{ '' if emails|length == 1 else 's' }}</a>
+  {% endif %}
+</form>
+
+<table class="data-table">
+  <thead>
+    <tr><th>Code</th><th>Name</th><th>Email</th><th>Party</th><th>Pledged / Paid</th><th>Status</th><th>Notes</th><th>Created</th></tr>
+  </thead>
+  <tbody>
+    {% for o in orders %}
+    {% set pledged = o.pledged_donation_cents or 0 %}
+    {% set paid = o.paid_donation_cents or 0 %}
+    {% set fully = pledged > 0 and paid >= pledged %}
+    {% set short = pledged > 0 and paid < pledged %}
+    <tr>
+      <td><code>{{ o.order_code }}</code></td>
+      <td>{{ o.buyer_first }} {{ o.buyer_last }}{% if o.is_captain_order %} <span class="pill pill-confirmed">C</span>{% endif %}</td>
+      <td>{% if o.buyer_email %}<a href="mailto:{{ o.buyer_email }}">{{ o.buyer_email }}</a>{% endif %}</td>
+      <td>{{ o.party_size }}</td>
+      <td>
+        ${{ '%.0f' % (pledged / 100) }} / <strong>${{ '%.2f' % (paid / 100) }}</strong>
+        {% if fully %}<span class="pill pill-confirmed" style="font-size:0.7rem">paid</span>
+        {% elif short %}<span class="pill pill-waitlist" style="font-size:0.7rem">owes ${{ '%.0f' % ((pledged - paid)/100) }}</span>
+        {% endif %}
+      </td>
+      <td><span class="pill pill-{{ o.status }}">{{ 'flex' if o.status == 'waitlist' else o.status }}</span></td>
+      <td>
+        {% set notes = (o.notes or '') %}
+        {% if 'Sit with captain' in notes or 'sit with captain' in notes %}
+          <span class="pill pill-waitlist" style="font-size:0.7rem; background:#fdeeb8; color:#7a5300">seat req</span>
+        {% endif %}
+        {% if notes %}
+          <details><summary class="muted" style="cursor:pointer; font-size:0.85em">view</summary>
+            <div class="muted" style="white-space:pre-line; max-width:260px">{{ notes }}</div>
+          </details>
+        {% endif %}
+      </td>
+      <td class="muted">{{ o.created_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="muted center">No orders yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

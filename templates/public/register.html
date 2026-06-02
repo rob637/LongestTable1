@@ -1,0 +1,184 @@
+{% extends "public/base.html" %}
+{% block title %}Reserve a Seat — {{ event.event_name }}{% endblock %}
+{% block content %}
+<section class="band">
+  <div class="container-sm">
+    <div class="stepper">
+      <div class="step active"><span class="num">1</span> Attendees</div>
+      <div class="step"><span class="num">2</span> Donation</div>
+      <div class="step"><span class="num">3</span> Confirm</div>
+    </div>
+
+    <div class="card">
+      <h1 style="margin-bottom:0.25em">Reserve your seats</h1>
+      <p class="muted">{{ event.event_date }} · {{ event.event_time }} · {{ event.event_location }}</p>
+
+      {% if seats_remaining is not none and seats_remaining == 0 %}
+        <div class="banner" style="background:#fef3c7; border:1px solid #f5d271; padding:1rem; border-radius:var(--radius-sm); margin:1rem 0">
+          <strong>Seats are full — but you can still join as a Flex Participant.</strong>
+          There will be a seat for you at the long table; your specific table
+          assignment will be finalized a few days before the event, or sooner
+          if a Table Captain pulls you in.
+        </div>
+      {% elif seats_remaining is not none and seats_remaining <= 30 %}
+        <div class="banner" style="background:#fef3c7; border:1px solid #f5d271; padding:1rem; border-radius:var(--radius-sm); margin:1rem 0">
+          <strong>Only {{ seats_remaining }} seat{{ '' if seats_remaining == 1 else 's' }} left.</strong>
+          Sign up now to lock in your seats.
+        </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('public.register') }}" id="reg-form">
+        <h3 style="margin-top:1.5rem">Who's coming?</h3>
+        <p class="hint">Please add a row for each person joining. Up to {{ event.max_per_order }} per order. All fields are required so your Table Captain can reach each attendee.</p>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Lead contact first name *</label>
+            <input type="text" name="buyer_first" required />
+          </div>
+          <div class="field">
+            <label>Lead contact last name *</label>
+            <input type="text" name="buyer_last" required />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Lead contact email *</label>
+            <input type="email" name="buyer_email" required />
+            <div class="hint">We'll email your confirmation + magic link here.</div>
+          </div>
+          <div class="field">
+            <label>Lead contact cell *</label>
+            <input type="tel" name="buyer_phone" required />
+          </div>
+        </div>
+
+        <div id="attendees"></div>
+
+        <button type="button" class="btn btn-secondary" id="add-attendee">+ Add another attendee</button>
+
+        <h3 style="margin-top:2rem">Donation</h3>
+        <p class="hint">The event is free. Most folks add a suggested donation of <strong>$10 per attendee</strong> to Rustic Love. You'll pay it with PayPal or Venmo on the next screen.</p>
+        <div class="field-row">
+          <div class="field">
+            <label>Pledged donation (USD)</label>
+            <input type="number" name="pledged_donation" id="pledged_donation" min="0" step="1" value="{{ default_pledge_dollars }}" />
+            <div class="hint" id="suggested-note">Suggested: ${{ default_pledge_dollars }} (${{ '%.0f' % (default_donation_per_attendee_cents/100) }} × <span id="party-count">1</span> attendees)</div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:1.5rem">
+          <label>Are you a Table Captain?</label>
+          <label class="checkbox"><input type="checkbox" name="is_captain_order" value="1" /> Yes — I've been confirmed as a Table Captain for this year.</label>
+          <div class="hint">If you're not sure, leave this unchecked.</div>
+        </div>
+
+        <div class="field" style="margin-top:1.5rem">
+          <label>Want to sit with a specific Table Captain?</label>
+          <input type="text" name="seat_with_captain" placeholder="e.g. Jane Doe" />
+          <div class="hint">Optional. We'll do our best to seat you at their table.</div>
+        </div>
+
+        <div class="field" style="margin-top:1.5rem">
+          <label>Anything else we should know?</label>
+          <textarea name="notes" rows="2" placeholder="Dietary restrictions, mobility needs, requests, etc."></textarea>
+        </div>
+
+        <div class="field" style="margin-top:1.5rem">
+          <button type="submit" class="btn btn-primary btn-block">Continue to donation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<template id="attendee-tpl">
+  <div class="attendee-block" data-idx="">
+    <button type="button" class="remove">Remove</button>
+    <h4>Attendee <span class="n"></span></h4>
+    <div class="field-row">
+      <div class="field">
+        <label>First name *</label>
+        <input type="text" name="att_first[]" required />
+      </div>
+      <div class="field">
+        <label>Last name *</label>
+        <input type="text" name="att_last[]" required />
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Email *</label>
+        <input type="email" name="att_email[]" required />
+      </div>
+      <div class="field">
+        <label>Cell phone</label>
+        <input type="tel" name="att_phone[]" />
+        <div class="hint">Optional — leave blank to use lead contact's number.</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Age range *</label>
+        <select name="att_age[]" required>
+          <option value="Adult">Adult</option>
+          <option value="Senior">Senior</option>
+          <option value="Teen">Teen</option>
+          <option value="Child">Child</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Accommodations</label>
+        <select name="att_acc[]">
+          <option value="">None</option>
+          <option value="Wheelchair">Wheelchair access</option>
+          <option value="Visual">Visually impaired</option>
+          <option value="Caregiver seat">Seat required for caregiver</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+(function () {
+  const wrap = document.getElementById('attendees');
+  const tpl = document.getElementById('attendee-tpl');
+  const addBtn = document.getElementById('add-attendee');
+  const max = {{ event.max_per_order }};
+  const perCents = {{ default_donation_per_attendee_cents }};
+  const partyCountEl = document.getElementById('party-count');
+  const pledgeEl = document.getElementById('pledged_donation');
+  const suggestedNote = document.getElementById('suggested-note');
+  let dirty = false;
+
+  function renumber() {
+    const blocks = wrap.querySelectorAll('.attendee-block');
+    blocks.forEach((b, i) => b.querySelector('.n').textContent = (i + 1));
+    partyCountEl.textContent = blocks.length;
+    const perDollars = Math.round(perCents / 100);
+    const suggested = perDollars * blocks.length;
+    suggestedNote.innerHTML =
+      `Suggested: $${suggested} ($${perDollars} × ${blocks.length} attendees)`;
+    if (!dirty) pledgeEl.value = suggested;
+    addBtn.disabled = blocks.length >= max;
+    addBtn.textContent = blocks.length >= max
+      ? `Maximum ${max} attendees per order`
+      : '+ Add another attendee';
+  }
+
+  function addOne() {
+    const node = tpl.content.firstElementChild.cloneNode(true);
+    node.querySelector('.remove').addEventListener('click', () => {
+      if (wrap.querySelectorAll('.attendee-block').length <= 1) return;
+      node.remove(); renumber();
+    });
+    wrap.appendChild(node); renumber();
+  }
+
+  pledgeEl.addEventListener('input', () => dirty = true);
+  addBtn.addEventListener('click', addOne);
+  addOne();
+})();
+</script>
+{% endblock %}

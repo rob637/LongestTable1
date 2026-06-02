@@ -1,0 +1,24 @@
+{% extends "public/base.html" %}
+{% block title %}Table Captain sign-in — {{ event.event_name }}{% endblock %}
+{% block content %}
+<section class="band">
+  <div class="container-sm">
+    <div class="card">
+      <h1>Table Captain sign-in</h1>
+      <p>If you registered as a Table Captain, enter the email you used to sign up. We'll send you a one-time link to your captain dashboard — your table number, your roster, and tools to invite friends.</p>
+      <form method="POST" action="{{ url_for('captain.login') }}">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" name="email" required autofocus />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Email me a link</button>
+      </form>
+      <p class="muted" style="margin-top:1rem">
+        Not a captain yet?
+        <a href="{{ url_for('public.register') }}">Sign up</a> and check the
+        "I'd like to host as a Table Captain" box.
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

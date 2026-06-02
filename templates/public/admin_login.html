@@ -1,0 +1,18 @@
+{% extends "public/base.html" %}
+{% block title %}Admin sign in{% endblock %}
+{% block content %}
+<section class="band">
+  <div class="container-sm">
+    <div class="card">
+      <h1>Admin sign-in</h1>
+      <p>Enter your admin email; we'll send a one-time sign-in link. (In dev mode the link is printed to the server console.)</p>
+      <form method="POST">
+        <div class="field"><label>Email</label><input type="email" name="email" required autofocus/></div>
+        <div class="field"><label>Passcode (optional)</label><input type="text" name="passcode" inputmode="numeric" autocomplete="off" placeholder="Skip email and sign in directly"/></div>
+        <button class="btn btn-primary btn-block">Sign in</button>
+      </form>
+      <p class="hint" style="margin-top:1rem">Only emails listed in <code>admin_emails</code> can sign in. Leave passcode blank to receive an email link.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

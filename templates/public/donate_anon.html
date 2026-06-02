@@ -1,0 +1,94 @@
+{% extends "public/base.html" %}
+{% block title %}Donate — {{ event.event_name }}{% endblock %}
+{% block content %}
+<section class="band">
+  <div class="container-sm">
+    <div class="card">
+      <div class="eyebrow">Support the event</div>
+      <h1>Give to Rustic Love.</h1>
+      <p>
+        Every dollar donated to The Longest Table Vienna goes directly to
+        <strong>Rustic Love</strong> and the local school food pantries they support.
+        You don't need to attend — every gift fills a plate for a neighbor in need.
+      </p>
+
+      <h3 style="margin-top:1.5rem">Choose an amount</h3>
+      <div class="tier-grid">
+        {% for t in pay.tiers %}
+          <a class="tier {% if t.amount_cents == pay.amount_cents %}is-selected{% endif %}"
+             href="{{ url_for('public.donate_anon', amount=t.amount_cents) }}">
+            <div class="name">{{ t.name }}</div>
+            <div class="amt">${{ t.amount_display }}</div>
+          </a>
+        {% endfor %}
+      </div>
+
+      <p class="muted" style="margin-top:1rem">
+        Currently giving: <strong>${{ pay.amount_display }}</strong>.
+        Pick any tier above to change, or
+        <a href="#custom" onclick="document.getElementById('custom-amt').focus(); return false;">enter a custom amount</a>.
+      </p>
+
+      <form method="GET" action="{{ url_for('public.donate_anon') }}" id="custom"
+            style="margin-top:0.5rem; max-width:320px">
+        <div class="field-row" style="align-items:flex-end; gap:0.5rem">
+          <div class="field" style="flex:1; margin:0">
+            <label>Custom amount ($)</label>
+            <input id="custom-amt" name="amount" type="number" min="1" step="1"
+                   value="{{ '%d' % (pay.amount_cents / 100) }}"
+                   onfocus="this.select()" />
+          </div>
+          <button class="btn btn-secondary" type="submit"
+                  onclick="this.form.amount.value = (parseFloat(this.form.amount.value || 0) * 100).toFixed(0);">
+            Update
+          </button>
+        </div>
+      </form>
+
+      <div class="pay-grid">
+        <div class="pay-card">
+          <h3>Venmo</h3>
+          {% if pay.has_venmo %}
+            <img class="qr" src="{{ pay.venmo_qr }}" alt="Venmo QR code" />
+            <a class="btn btn-primary btn-block" href="{{ pay.venmo_url }}">
+              Open Venmo · ${{ pay.amount_display }}
+            </a>
+            <p class="muted" style="margin-top:0.75rem; font-size:0.85rem">
+              Scan the QR with your phone camera, or tap on mobile.
+            </p>
+          {% else %}
+            <div class="qr-placeholder">Venmo not configured</div>
+          {% endif %}
+        </div>
+
+        <div class="pay-card">
+          <h3>PayPal</h3>
+          {% if pay.has_paypal %}
+            <img class="qr" src="{{ pay.paypal_qr }}" alt="PayPal QR code" />
+            <a class="btn btn-primary btn-block" href="{{ pay.paypal_url }}">
+              Open PayPal · ${{ pay.amount_display }}
+            </a>
+            <p class="muted" style="margin-top:0.75rem; font-size:0.85rem">
+              Scan the QR with your phone camera, or tap on mobile.
+            </p>
+          {% else %}
+            <div class="qr-placeholder">PayPal not configured</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <p class="hint" style="margin-top:1.5rem">
+        Please include the note <code>{{ pay.note }}</code> (already pre-filled
+        in the buttons above) so we can thank you and acknowledge your gift.
+        Want a tax receipt? Email
+        <a href="mailto:{{ event.organizer_email }}">{{ event.organizer_email or event.organizer_name }}</a>.
+      </p>
+
+      <div class="row" style="margin-top:1.5rem">
+        <a class="btn btn-secondary" href="{{ url_for('public.register') }}">Reserve a seat instead</a>
+        <a class="btn btn-ghost" href="{{ url_for('public.home') }}">← Back to home</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

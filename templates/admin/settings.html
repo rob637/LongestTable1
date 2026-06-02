@@ -1,0 +1,74 @@
+{% extends "admin/base.html" %}
+{% block title %}Settings — Admin{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+<p class="muted">These power the public site, registration form, and payment QR codes.</p>
+
+<form method="POST" action="{{ url_for('admin.settings_save') }}">
+  <div class="card">
+    <h3>Event</h3>
+    <div class="field-row">
+      <div class="field"><label>Event name</label><input name="event_name" value="{{ s.event_name }}"/></div>
+      <div class="field"><label>Tagline</label><input name="event_tagline" value="{{ s.event_tagline }}"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Date</label><input name="event_date" value="{{ s.event_date }}"/></div>
+      <div class="field"><label>Time</label><input name="event_time" value="{{ s.event_time }}"/></div>
+    </div>
+    <div class="field"><label>Location</label><input name="event_location" value="{{ s.event_location }}"/></div>
+    <div class="field"><label>Event year</label><input name="event_year" value="{{ s.event_year }}"/></div>
+    <div class="field"><label>Hero headline</label><input name="hero_headline" value="{{ s.hero_headline }}"/></div>
+    <div class="field"><label>Hero subhead</label><input name="hero_subhead" value="{{ s.hero_subhead }}"/></div>
+    <div class="field"><label>About blurb</label><textarea name="about_blurb" rows="5">{{ s.about_blurb }}</textarea></div>
+  </div>
+
+  <div class="card">
+    <h3>Registration</h3>
+    <div class="field-row">
+      <div class="field"><label>Max per order</label><input name="max_per_order" type="number" value="{{ s.max_per_order }}"/></div>
+      <div class="field"><label>Default donation per attendee (¢)</label><input name="default_donation_per_attendee_cents" type="number" value="{{ s.default_donation_per_attendee_cents }}"/></div>
+    </div>
+    <div class="field"><label>Max attendees (0 = unlimited)</label><input name="max_attendees" type="number" value="{{ s.max_attendees }}"/></div>
+  </div>
+
+  <div class="card">
+    <h3>Fundraising progress (homepage thermometer)</h3>
+    <div class="field-row">
+      <div class="field"><label>Fundraising goal (¢)</label><input name="fundraising_goal_cents" type="number" value="{{ s.fundraising_goal_cents }}" placeholder="1500000"/></div>
+      <div class="field"><label>Attendee goal</label><input name="attendee_goal" type="number" value="{{ s.attendee_goal }}" placeholder="300"/></div>
+    </div>
+    <div class="field">
+      <label><input type="checkbox" name="show_thermometer" value="1" {% if s.show_thermometer in ('1', 1, True, 'true') %}checked{% endif %}/> Show the fundraising thermometer on the homepage</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Donations (PayPal & Venmo)</h3>
+    <p class="hint">Provide a handle <em>or</em> a full URL. QR codes generate automatically.</p>
+    <div class="field-row">
+      <div class="field"><label>PayPal handle</label><input name="paypal_handle" value="{{ s.paypal_handle }}" placeholder="RusticLove"/></div>
+      <div class="field"><label>PayPal URL override</label><input name="paypal_url" value="{{ s.paypal_url }}" placeholder="https://paypal.me/RusticLove"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Venmo handle</label><input name="venmo_handle" value="{{ s.venmo_handle }}" placeholder="Rustic-Love"/></div>
+      <div class="field"><label>Venmo URL override</label><input name="venmo_url" value="{{ s.venmo_url }}"/></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Email & access</h3>
+    <div class="field-row">
+      <div class="field"><label>Organizer name</label><input name="organizer_name" value="{{ s.organizer_name }}"/></div>
+      <div class="field"><label>Organizer email</label><input name="organizer_email" type="email" value="{{ s.organizer_email }}"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>From email</label><input name="from_email" value="{{ s.from_email }}" placeholder="hello@longesttablevienna.org"/></div>
+      <div class="field"><label>Reply-to email</label><input name="reply_to_email" value="{{ s.reply_to_email }}"/></div>
+    </div>
+    <div class="field"><label>App base URL (for magic links)</label><input name="app_base_url" value="{{ s.app_base_url }}" placeholder="https://longest-table-vienna.web.app"/></div>
+    <div class="field"><label>Admin emails (comma-separated)</label><input name="admin_emails" value="{{ s.admin_emails }}"/></div>
+  </div>
+
+  <button class="btn btn-primary" style="margin-top:1.5rem">Save settings</button>
+</form>
+{% endblock %}

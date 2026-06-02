@@ -1,0 +1,34 @@
+substitutions:
+  _SERVICE: longest-table-vienna
+  _REGION: us-east4
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - us-east4-docker.pkg.dev/$PROJECT_ID/longest-table/app:$SHORT_SHA
+      - -t
+      - us-east4-docker.pkg.dev/$PROJECT_ID/longest-table/app:latest
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args: [push, --all-tags, us-east4-docker.pkg.dev/$PROJECT_ID/longest-table/app]
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=us-east4-docker.pkg.dev/$PROJECT_ID/longest-table/app:$SHORT_SHA
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+
+images:
+  - us-east4-docker.pkg.dev/$PROJECT_ID/longest-table/app:$SHORT_SHA
+  - us-east4-docker.pkg.dev/$PROJECT_ID/longest-table/app:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY

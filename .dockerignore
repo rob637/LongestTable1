@@ -1,0 +1,6 @@
+.git
+__pycache__
+*.pyc
+data/
+service-account.json
+*.db

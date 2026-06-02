@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{% block title %}Admin — The Longest Table Vienna{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='design.css') }}" />
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23c1573a'/></svg>" />
+  <meta name="theme-color" content="#c1573a" />
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <a href="{{ url_for('public.home') }}" class="brand"><span class="brand-dot"></span> TLTV Admin</a>
+      <nav style="margin-top:1.5rem">
+        <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if active=='dashboard' }}">Dashboard</a>
+        <a href="{{ url_for('admin.orders') }}" class="{{ 'active' if active=='orders' }}">Orders</a>
+        <a href="{{ url_for('admin.donations') }}" class="{{ 'active' if active=='donations' }}">Donations</a>
+        <a href="{{ url_for('admin.photos') }}" class="{{ 'active' if active=='photos' }}">Photos</a>
+        <a href="{{ url_for('admin.content') }}" class="{{ 'active' if active=='content' }}">Content</a>
+        <a href="{{ url_for('admin.potluck') }}" class="{{ 'active' if active=='potluck' }}">Potluck Menu</a>
+        <a href="{{ url_for('admin.sponsors_crm') }}" class="{{ 'active' if active=='sponsors_crm' }}">Sponsor CRM</a>
+        <a href="{{ url_for('admin.settings') }}" class="{{ 'active' if active=='settings' }}">Settings</a>
+        <hr style="border:0; border-top:1px solid var(--line); margin:1rem 0" />
+        <a href="{{ url_for('admin.assigner') }}">Table Assigner →</a>
+        <a href="{{ url_for('public.home') }}">View Public Site →</a>
+      </nav>
+      <div class="muted" style="margin-top:2rem; font-size:0.8rem; padding:0 0.75rem">
+        Signed in as<br/><strong>{{ admin_email or 'dev' }}</strong>
+      </div>
+    </aside>
+    <main class="admin-main">
+      <div class="toast-stack" id="toast-stack">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+            <div class="toast {{ cat }}" data-auto-dismiss="4500">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      </div>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  <script>
+    document.querySelectorAll('.toast[data-auto-dismiss]').forEach(t => {
+      const ms = parseInt(t.dataset.autoDismiss || '4500', 10);
+      setTimeout(() => { t.style.transition = 'opacity .4s'; t.style.opacity = '0';
+        setTimeout(() => t.remove(), 400); }, ms);
+      t.addEventListener('click', () => t.remove());
+    });
+  </script>
+</body>
+</html>

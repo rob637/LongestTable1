@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+{% block title %}Photos — Admin{% endblock %}
+{% block content %}
+<h1>Photos</h1>
+<p class="muted">Two libraries: <strong>Vienna scenery</strong> (used as hero/page backgrounds) and <strong>Event photos</strong> (used in the gallery).</p>
+
+<div class="card" style="max-width:560px; margin-bottom:2rem">
+  <h3>Upload a photo</h3>
+  <form method="POST" action="{{ url_for('admin.photos_upload') }}" enctype="multipart/form-data">
+    <div class="field-row">
+      <div class="field"><label>Collection</label>
+        <select name="collection">
+          <option value="event">Event photo</option>
+          <option value="vienna">Vienna scenery</option>
+        </select>
+      </div>
+      <div class="field"><label>Year</label><input name="year" type="number" value="{{ event.event_year }}"/></div>
+    </div>
+    <div class="field"><label>File</label><input type="file" name="file" accept="image/*" required/></div>
+    <div class="field"><label>Caption</label><input name="caption"/></div>
+    <div class="field"><label>Alt text (accessibility)</label><input name="alt_text"/></div>
+    <div class="field"><label>Photo credit</label><input name="credit"/></div>
+    <div class="field">
+      <label class="checkbox"><input type="checkbox" name="is_featured" value="1"/> Featured (hero rotation)</label>
+    </div>
+    <button class="btn btn-primary">Upload</button>
+  </form>
+</div>
+
+{% for coll, label in [('event','Event Photos'),('vienna','Vienna Scenery')] %}
+  <h2 style="margin-top:2rem">{{ label }}</h2>
+  <div class="gallery">
+    {% for p in photos if p.collection == coll %}
+      <div style="position:relative">
+        <img src="{{ p.thumb_url or p.url }}" alt="{{ p.alt_text or '' }}" loading="lazy" />
+        <form method="POST" action="{{ url_for('admin.photos_delete', photo_id=p.id) }}" style="position:absolute; top:6px; right:6px">
+          <button class="btn btn-secondary" style="padding:0.2rem 0.6rem; min-height:auto; font-size:0.78rem">✕</button>
+        </form>
+        {% if p.is_featured %}<div style="position:absolute; bottom:6px; left:6px; background:var(--terracotta); color:#fff; padding:0.2rem 0.6rem; border-radius:999px; font-size:0.72rem; font-weight:600">Featured</div>{% endif %}
+      </div>
+    {% else %}
+      <div class="placeholder">No photos uploaded yet.</div>
+    {% endfor %}
+  </div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "admin/base.html" %}
+{% block title %}Sponsor CRM — Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+  <h1>Sponsor pipeline</h1>
+  <p class="muted">
+    Track every sponsor from first contact through paid.
+    Use "Promote to public wall" to copy a sponsor onto the homepage.
+  </p>
+</div>
+
+<div class="stat-grid" style="margin:1rem 0">
+  {% for stage in stages %}
+    {% set s = summary.get(stage, {'count': 0, 'amount_cents': 0}) %}
+    <div class="stat">
+      <div class="label" style="text-transform:capitalize">{{ stage }}</div>
+      <div class="num">{{ s.count }}</div>
+      <div class="muted" style="font-size:0.85em">${{ '{:,.0f}'.format(s.amount_cents / 100) }}</div>
+    </div>
+  {% endfor %}
+  <div class="stat" style="background:var(--paper-2)">
+    <div class="label">Pipeline total</div>
+    <div class="num">{{ summary['_total'].count }}</div>
+    <div class="muted" style="font-size:0.85em">${{ '{:,.0f}'.format(summary['_total'].amount_cents / 100) }}</div>
+  </div>
+</div>
+
+{# ── Existing prospects ───────────────────────────────────────────── #}
+<div class="card">
+  <h3 style="margin-top:0">Prospects</h3>
+  {% if not prospects %}
+    <p class="muted">No sponsors tracked yet. Add your first one below.</p>
+  {% else %}
+  <div style="overflow-x:auto">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Sponsor</th>
+        <th>Contact</th>
+        <th>Level</th>
+        <th>Amount</th>
+        <th>Stage</th>
+        <th>Owner</th>
+        <th>Last contact</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in prospects %}
+      <tr>
+        <td>
+          <strong>{{ p.name }}</strong>
+          {% if p.on_public_wall %}<br><span class="pill pill-confirmed" style="font-size:0.7rem">on wall</span>{% endif %}
+        </td>
+        <td>
+          {{ p.contact_name or '—' }}<br>
+          {% if p.contact_email %}<a href="mailto:{{ p.contact_email }}">{{ p.contact_email }}</a>{% endif %}
+          {% if p.contact_phone %}<div class="muted" style="font-size:0.85em">{{ p.contact_phone }}</div>{% endif %}
+        </td>
+        <td>{{ p.level or '—' }}</td>
+        <td>${{ '{:,.0f}'.format((p.amount_cents or 0) / 100) }}</td>
+        <td><span class="pill pill-{{ 'confirmed' if p.stage == 'paid' else ('confirmed' if p.stage == 'committed' else 'waitlist') }}" style="text-transform:capitalize">{{ p.stage }}</span></td>
+        <td>{{ p.assigned_to or '—' }}</td>
+        <td>{{ p.last_contact_at or '—' }}</td>
+        <td style="white-space:nowrap">
+          <details>
+            <summary class="btn btn-ghost" style="padding:0.3rem 0.6rem; cursor:pointer">Edit</summary>
+            <form method="POST" action="{{ url_for('admin.sponsors_crm_save') }}" style="margin-top:0.5rem; padding:0.75rem; background:var(--paper-2); border-radius:var(--radius-sm); min-width:320px">
+              <input type="hidden" name="id" value="{{ p.id }}"/>
+              <div class="field"><label>Name</label><input type="text" name="name" value="{{ p.name }}" required/></div>
+              <div class="row" style="gap:0.5rem; flex-wrap:wrap">
+                <div class="field" style="flex:1; min-width:140px"><label>Contact name</label><input type="text" name="contact_name" value="{{ p.contact_name or '' }}"/></div>
+                <div class="field" style="flex:1; min-width:140px"><label>Email</label><input type="email" name="contact_email" value="{{ p.contact_email or '' }}"/></div>
+              </div>
+              <div class="row" style="gap:0.5rem; flex-wrap:wrap">
+                <div class="field" style="flex:1; min-width:120px"><label>Phone</label><input type="text" name="contact_phone" value="{{ p.contact_phone or '' }}"/></div>
+                <div class="field" style="flex:1; min-width:120px"><label>Level</label><input type="text" name="level" value="{{ p.level or '' }}" placeholder="Angel"/></div>
+                <div class="field" style="flex:1; min-width:100px"><label>Amount $</label><input type="number" step="0.01" name="amount" value="{{ '%.2f' % ((p.amount_cents or 0) / 100) }}"/></div>
+              </div>
+              <div class="row" style="gap:0.5rem; flex-wrap:wrap">
+                <div class="field" style="flex:1; min-width:120px"><label>Stage</label>
+                  <select name="stage">
+                    {% for s in stages %}<option value="{{ s }}" {% if p.stage == s %}selected{% endif %} style="text-transform:capitalize">{{ s }}</option>{% endfor %}
+                  </select>
+                </div>
+                <div class="field" style="flex:1; min-width:120px"><label>Owner</label><input type="text" name="assigned_to" value="{{ p.assigned_to or '' }}"/></div>
+                <div class="field" style="flex:1; min-width:140px"><label>Last contact</label><input type="text" name="last_contact_at" value="{{ p.last_contact_at or '' }}" placeholder="2026-06-01"/></div>
+              </div>
+              <div class="row" style="gap:0.5rem; flex-wrap:wrap">
+                <div class="field" style="flex:1; min-width:160px"><label>URL</label><input type="url" name="url" value="{{ p.url or '' }}"/></div>
+                <div class="field" style="flex:1; min-width:160px"><label>Logo URL</label><input type="url" name="logo_url" value="{{ p.logo_url or '' }}"/></div>
+              </div>
+              <div class="field"><label>Notes</label><textarea name="notes" rows="3">{{ p.notes or '' }}</textarea></div>
+              <div class="row" style="gap:0.5rem; flex-wrap:wrap; justify-content:space-between; margin-top:0.5rem">
+                <button class="btn btn-primary" type="submit">Save</button>
+                <button class="btn btn-secondary" type="submit" formaction="{{ url_for('admin.sponsors_crm_promote', sid=p.id) }}" formmethod="POST">Promote to public wall</button>
+                <button class="btn btn-ghost" type="submit" formaction="{{ url_for('admin.sponsors_crm_delete', sid=p.id) }}" formmethod="POST" onclick="return confirm('Delete {{ p.name|e }}?')">Delete</button>
+              </div>
+            </form>
+          </details>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</div>
+
+{# ── Add new ──────────────────────────────────────────────────────── #}
+<div class="card">
+  <h3 style="margin-top:0">Add a sponsor</h3>
+  <form method="POST" action="{{ url_for('admin.sponsors_crm_save') }}">
+    <div class="row" style="gap:0.75rem; flex-wrap:wrap">
+      <div class="field" style="flex:1; min-width:180px"><label>Name *</label><input type="text" name="name" required placeholder="ACME Bank"/></div>
+      <div class="field" style="flex:1; min-width:160px"><label>Contact name</label><input type="text" name="contact_name"/></div>
+      <div class="field" style="flex:1; min-width:160px"><label>Email</label><input type="email" name="contact_email"/></div>
+      <div class="field" style="flex:1; min-width:140px"><label>Phone</label><input type="text" name="contact_phone"/></div>
+    </div>
+    <div class="row" style="gap:0.75rem; flex-wrap:wrap">
+      <div class="field" style="flex:1; min-width:140px"><label>Level</label><input type="text" name="level" placeholder="Angel"/></div>
+      <div class="field" style="flex:1; min-width:120px"><label>Amount $</label><input type="number" step="0.01" name="amount" value="0"/></div>
+      <div class="field" style="flex:1; min-width:140px"><label>Stage</label>
+        <select name="stage">
+          {% for s in stages %}<option value="{{ s }}" style="text-transform:capitalize">{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field" style="flex:1; min-width:140px"><label>Owner</label><input type="text" name="assigned_to" placeholder="Sponsorship lead"/></div>
+    </div>
+    <div class="row" style="margin-top:0.5rem">
+      <button class="btn btn-primary" type="submit">Add sponsor</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

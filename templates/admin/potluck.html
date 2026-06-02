@@ -1,0 +1,75 @@
+{% extends "admin/base.html" %}
+{% block title %}Potluck Menu — Admin{% endblock %}
+{% block content %}
+<div class="admin-header">
+  <h1>Potluck menu</h1>
+  <p class="muted">
+    These categories appear on every Table Captain's potluck signup board.
+    Captains and guests claim items per table.
+    "Slots per table" is how many people should sign up for that category at each table.
+  </p>
+</div>
+
+<form method="POST" action="{{ url_for('admin.potluck_save') }}" class="card">
+  <table class="data-table" id="cat-table">
+    <thead>
+      <tr>
+        <th style="width:30%">Category</th>
+        <th style="width:12%">Slots / table</th>
+        <th>Notes</th>
+        <th style="width:10%">Sort</th>
+        <th style="width:80px"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in categories %}
+      <tr>
+        <td>
+          <input type="hidden" name="cat_id[]" value="{{ c.id }}"/>
+          <input type="text" name="cat_name[]" value="{{ c.name }}" required/>
+        </td>
+        <td><input type="number" name="cat_count[]" min="0" value="{{ c.per_table_count }}"/></td>
+        <td><input type="text" name="cat_notes[]" value="{{ c.notes or '' }}" placeholder="e.g. serves ~8"/></td>
+        <td><input type="number" name="cat_sort[]" value="{{ c.sort_order or 0 }}"/></td>
+        <td><button type="button" class="btn btn-ghost btn-remove" style="padding:0.3rem 0.7rem">Remove</button></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="row" style="margin-top:1rem; justify-content:space-between">
+    <button type="button" class="btn btn-secondary" id="add-cat">+ Add category</button>
+    <button type="submit" class="btn btn-primary">Save</button>
+  </div>
+</form>
+
+<template id="cat-row-tpl">
+  <tr>
+    <td>
+      <input type="hidden" name="cat_id[]" value="0"/>
+      <input type="text" name="cat_name[]" required/>
+    </td>
+    <td><input type="number" name="cat_count[]" min="0" value="2"/></td>
+    <td><input type="text" name="cat_notes[]" placeholder="e.g. serves ~8"/></td>
+    <td><input type="number" name="cat_sort[]" value="99"/></td>
+    <td><button type="button" class="btn btn-ghost btn-remove" style="padding:0.3rem 0.7rem">Remove</button></td>
+  </tr>
+</template>
+
+<script>
+(function(){
+  const tbody = document.querySelector('#cat-table tbody');
+  document.getElementById('add-cat').addEventListener('click', () => {
+    const tpl = document.getElementById('cat-row-tpl');
+    tbody.appendChild(tpl.content.cloneNode(true));
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('btn-remove')) {
+      const row = e.target.closest('tr');
+      if (row && confirm('Remove this category? Any existing signups under it will also be removed when you save.')) {
+        row.remove();
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

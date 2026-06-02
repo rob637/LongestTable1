@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{% block title %}{{ event.event_name }}{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="{{ event.event_tagline }} — {{ event.event_date }} at {{ event.event_location }}." />
+  <meta name="theme-color" content="#c1573a" />
+  {% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}" />{% endif %}
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="{{ event.event_name }}" />
+  <meta property="og:title" content="{% block og_title %}{{ event.event_name }}{% endblock %}" />
+  <meta property="og:description" content="{% block og_desc %}{{ event.event_tagline }} — {{ event.event_date }} on {{ event.event_location }}.{% endblock %}" />
+  {% if canonical_url %}<meta property="og:url" content="{{ canonical_url }}" />{% endif %}
+  {% if og_image_url %}<meta property="og:image" content="{{ og_image_url }}" />{% endif %}
+  <meta name="twitter:card" content="{% if og_image_url %}summary_large_image{% else %}summary{% endif %}" />
+  <meta name="twitter:title" content="{{ self.og_title() }}" />
+  <meta name="twitter:description" content="{{ self.og_desc() }}" />
+  {% if og_image_url %}<meta name="twitter:image" content="{{ og_image_url }}" />{% endif %}
+
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23c1573a'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='design.css') }}" />
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <div class="inner">
+      <a href="{{ url_for('public.home') }}" class="brand">
+        <span class="brand-dot"></span> {{ event.event_name }}
+      </a>
+      <nav class="nav-links">
+        <a href="{{ url_for('public.home') }}#about">About</a>
+        <a href="{{ url_for('public.home') }}#sponsors">Sponsors</a>
+        <a href="{{ url_for('public.home') }}#faq">FAQ</a>
+        <a href="{{ url_for('public.order_login') }}">Manage Order</a>
+        <a href="{{ url_for('captain.login') }}">Captain</a>
+        <a href="{{ url_for('public.donate_anon') }}">Donate</a>
+        <a href="{{ url_for('public.register') }}" class="nav-cta">Reserve a Seat</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="container" style="padding-top:1rem">
+          {% for cat, msg in messages %}
+            <div class="banner {{ cat }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="brand"><span class="brand-dot"></span> {{ event.event_name }}</div>
+      <p>{{ event.event_tagline }}</p>
+      <p class="muted">Proceeds benefit <strong>Rustic Love</strong> and local school food pantries.</p>
+      <p class="muted" style="margin-top:1.5rem; font-size:0.85rem;">© {{ event.event_year }} The Longest Table Vienna · <a href="{{ url_for('public.order_login') }}">Manage Order</a> · <a href="{{ url_for('captain.login') }}">Captain</a> · <a href="{{ url_for('admin.dashboard') }}">Admin</a></p>
+    </div>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

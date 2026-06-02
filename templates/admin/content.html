@@ -1,0 +1,141 @@
+{% extends "admin/base.html" %}
+{% block title %}Content — Admin{% endblock %}
+{% block content %}
+<h1>Content</h1>
+<p class="muted">Edit the FAQ items and sponsor wall that appear on the public homepage.</p>
+
+<form method="POST" action="{{ url_for('admin.content_save') }}">
+
+  {# ── FAQ ────────────────────────────────────────────────────────── #}
+  <div class="card">
+    <h3 style="margin-top:0">FAQ</h3>
+    <p class="hint">Items appear in order on the homepage. Leave a row blank and save to remove it.</p>
+    <div id="faq-list">
+      {% for item in faq %}
+      <div class="faq-row" style="border:1px solid var(--line); border-radius:var(--radius-sm); padding:1rem; margin-bottom:0.75rem; background:var(--paper-2)">
+        <div class="field"><label>Question</label><input name="faq_q[]" value="{{ item.q }}"/></div>
+        <div class="field"><label>Answer</label><textarea name="faq_a[]" rows="3">{{ item.a }}</textarea></div>
+        <button type="button" class="btn btn-ghost faq-remove" style="padding:0.3rem 0.7rem; min-height:auto">Remove</button>
+      </div>
+      {% endfor %}
+    </div>
+    <button type="button" class="btn btn-secondary" id="faq-add">+ Add FAQ item</button>
+  </div>
+
+  {# ── Sponsors ───────────────────────────────────────────────────── #}
+  <div class="card">
+    <h3 style="margin-top:0">Sponsor wall</h3>
+    <div class="field-row">
+      <div class="field"><label>Section heading</label><input name="sponsors_heading" value="{{ sponsors_heading }}"/></div>
+      <div class="field"><label>Intro text (under the wall)</label><input name="sponsors_intro" value="{{ sponsors_intro }}"/></div>
+    </div>
+    <p class="hint">Upload a logo, or just type a name. Leave a row blank to remove it on save.</p>
+    <div id="sponsor-list">
+      {% for s in sponsors %}
+      <div class="sponsor-row" style="border:1px solid var(--line); border-radius:var(--radius-sm); padding:1rem; margin-bottom:0.75rem; background:var(--paper-2)">
+        <div class="field-row">
+          <div class="field"><label>Name</label><input name="s_name[]" value="{{ s.name }}"/></div>
+          <div class="field"><label>Tier (optional)</label><input name="s_tier[]" value="{{ s.tier }}" placeholder="Platinum / Gold / …"/></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Link URL (optional)</label><input name="s_url[]" value="{{ s.url }}" placeholder="https://…"/></div>
+          <div class="field">
+            <label>Logo URL</label>
+            <input name="s_logo_url[]" value="{{ s.logo_url }}" class="logo-url" placeholder="https://…"/>
+            <div class="hint">
+              or <input type="file" accept="image/*" class="logo-file" style="display:inline; width:auto; padding:0"/>
+              <span class="logo-status muted" style="margin-left:0.5rem"></span>
+            </div>
+          </div>
+        </div>
+        {% if s.logo_url %}<img src="{{ s.logo_url }}" alt="{{ s.name }}" style="max-height:50px; margin-top:0.5rem"/>{% endif %}
+        <button type="button" class="btn btn-ghost sponsor-remove" style="padding:0.3rem 0.7rem; min-height:auto; margin-top:0.5rem">Remove</button>
+      </div>
+      {% endfor %}
+    </div>
+    <button type="button" class="btn btn-secondary" id="sponsor-add">+ Add sponsor</button>
+  </div>
+
+  <button class="btn btn-primary" style="margin-top:1.5rem">Save content</button>
+</form>
+
+<template id="faq-tpl">
+  <div class="faq-row" style="border:1px solid var(--line); border-radius:var(--radius-sm); padding:1rem; margin-bottom:0.75rem; background:var(--paper-2)">
+    <div class="field"><label>Question</label><input name="faq_q[]"/></div>
+    <div class="field"><label>Answer</label><textarea name="faq_a[]" rows="3"></textarea></div>
+    <button type="button" class="btn btn-ghost faq-remove" style="padding:0.3rem 0.7rem; min-height:auto">Remove</button>
+  </div>
+</template>
+
+<template id="sponsor-tpl">
+  <div class="sponsor-row" style="border:1px solid var(--line); border-radius:var(--radius-sm); padding:1rem; margin-bottom:0.75rem; background:var(--paper-2)">
+    <div class="field-row">
+      <div class="field"><label>Name</label><input name="s_name[]"/></div>
+      <div class="field"><label>Tier (optional)</label><input name="s_tier[]" placeholder="Platinum / Gold / …"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Link URL (optional)</label><input name="s_url[]" placeholder="https://…"/></div>
+      <div class="field">
+        <label>Logo URL</label>
+        <input name="s_logo_url[]" class="logo-url" placeholder="https://…"/>
+        <div class="hint">
+          or <input type="file" accept="image/*" class="logo-file" style="display:inline; width:auto; padding:0"/>
+          <span class="logo-status muted" style="margin-left:0.5rem"></span>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="btn btn-ghost sponsor-remove" style="padding:0.3rem 0.7rem; min-height:auto; margin-top:0.5rem">Remove</button>
+  </div>
+</template>
+
+<script>
+(function () {
+  function wireRemove(row, cls) {
+    const btn = row.querySelector('.' + cls);
+    if (btn) btn.addEventListener('click', () => row.remove());
+  }
+  function wireLogoUpload(row) {
+    const file = row.querySelector('.logo-file');
+    const urlInput = row.querySelector('.logo-url');
+    const status = row.querySelector('.logo-status');
+    if (!file) return;
+    file.addEventListener('change', async () => {
+      if (!file.files || !file.files[0]) return;
+      status.textContent = 'Uploading…';
+      const fd = new FormData();
+      fd.append('file', file.files[0]);
+      try {
+        const r = await fetch('{{ url_for("admin.content_sponsor_logo") }}', {method:'POST', body: fd});
+        const data = await r.json();
+        if (data.url) {
+          urlInput.value = data.url;
+          status.textContent = 'Uploaded ✓';
+        } else {
+          status.textContent = data.error || 'Upload failed';
+        }
+      } catch (e) {
+        status.textContent = 'Upload failed';
+      }
+    });
+  }
+
+  document.querySelectorAll('.faq-row').forEach(r => wireRemove(r, 'faq-remove'));
+  document.querySelectorAll('.sponsor-row').forEach(r => {
+    wireRemove(r, 'sponsor-remove');
+    wireLogoUpload(r);
+  });
+
+  document.getElementById('faq-add').addEventListener('click', () => {
+    const tpl = document.getElementById('faq-tpl').content.firstElementChild.cloneNode(true);
+    wireRemove(tpl, 'faq-remove');
+    document.getElementById('faq-list').appendChild(tpl);
+  });
+  document.getElementById('sponsor-add').addEventListener('click', () => {
+    const tpl = document.getElementById('sponsor-tpl').content.firstElementChild.cloneNode(true);
+    wireRemove(tpl, 'sponsor-remove');
+    wireLogoUpload(tpl);
+    document.getElementById('sponsor-list').appendChild(tpl);
+  });
+})();
+</script>
+{% endblock %}

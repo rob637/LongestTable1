@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Sign up — Longest Table</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body class="signup-body">
+  <header>
+    <h1 id="header-title">🍽️ Loading…</h1>
+    <p id="header-sub" class="muted"></p>
+  </header>
+
+  <main class="signup-main">
+    <section id="attendees-section">
+      <h2>Who's at this table</h2>
+      <ul id="attendees"></ul>
+    </section>
+
+    <section>
+      <h2>Sign up to bring something</h2>
+      <p class="muted">Add your name and what you're planning to bring. You can
+      sign up for multiple items. To unclaim an item, click the ✕ next to it.</p>
+      <div id="categories"></div>
+    </section>
+  </main>
+
+  <script>
+    const TOKEN = {{ token|tojson }};
+
+    async function load() {
+      const res = await fetch(`/api/signup-info/${TOKEN}`);
+      if (!res.ok) {
+        document.getElementById("header-title").textContent = "Signup link not found";
+        return;
+      }
+      const data = await res.json();
+      document.getElementById("header-title").textContent =
+        `${data.event_name} — Table ${data.table_number}`;
+      document.getElementById("header-sub").textContent =
+        [data.event_date, data.captain_name ? `Hosted by ${data.captain_name}` : ""]
+          .filter(Boolean).join(" · ");
+
+      const attendeesEl = document.getElementById("attendees");
+      attendeesEl.innerHTML = data.attendees.map(a => `<li>${esc(a)}</li>`).join("");
+
+      renderCategories(data);
+    }
+
+    function renderCategories(data) {
+      const wrap = document.getElementById("categories");
+      wrap.innerHTML = "";
+      const byCat = {};
+      for (const s of data.signups) {
+        (byCat[s.category_id] ||= []).push(s);
+      }
+      for (const c of data.categories) {
+        const claims = byCat[c.id] || [];
+        const div = document.createElement("div");
+        div.className = "signup-category";
+        div.innerHTML = `
+          <div class="signup-cat-head">
+            <h3>${esc(c.name)}</h3>
+            <span class="muted">${claims.length} claimed${c.per_table_count ? ` · ${c.per_table_count} recommended` : ''}${c.notes ? ' · ' + esc(c.notes) : ''}</span>
+          </div>
+          <ul class="signup-claims">
+            ${claims.map(s => `
+              <li>
+                <strong>${esc(s.person_name)}</strong>
+                ${s.item_description ? ' — ' + esc(s.item_description) : ''}
+                <button class="del-signup" data-id="${s.id}" title="Unclaim">✕</button>
+              </li>
+            `).join("") || '<li class="muted">Open — be the first to sign up!</li>'}
+          </ul>
+          <form class="signup-form" data-cat="${c.id}">
+            <input type="text" name="person_name" placeholder="Your name" required />
+            <input type="text" name="item_description" placeholder="What you'll bring (e.g. lasagna)" />
+            <button type="submit">Sign me up</button>
+          </form>
+        `;
+        wrap.appendChild(div);
+      }
+
+      wrap.querySelectorAll(".signup-form").forEach(form => {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const fd = new FormData(form);
+          const res = await fetch("/api/signups", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              token: TOKEN,
+              category_id: parseInt(form.dataset.cat, 10),
+              person_name: fd.get("person_name"),
+              item_description: fd.get("item_description"),
+            }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(err.error || "Could not sign up.");
+            return;
+          }
+          load();
+        });
+      });
+      wrap.querySelectorAll(".del-signup").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          if (!confirm("Unclaim this item?")) return;
+          await fetch(`/api/signups/${btn.dataset.id}`, { method: "DELETE" });
+          load();
+        });
+      });
+    }
+
+    function esc(s) {
+      return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+{% extends "public/base.html" %}
+{% block title %}Complete your donation — {{ event.event_name }}{% endblock %}
+{% block content %}
+<section class="band">
+  <div class="container-sm">
+    <div class="stepper">
+      <div class="step done"><span class="num">✓</span> Attendees</div>
+      <div class="step active"><span class="num">2</span> Donation</div>
+      <div class="step"><span class="num">3</span> Confirm</div>
+    </div>
+
+    <div class="card">
+      <div class="banner success">
+        <strong>You're in!</strong> Order <code>{{ order_code }}</code> is confirmed for {{ party_size }} {% if party_size == 1 %}attendee{% else %}attendees{% endif %}. A confirmation email is on its way.
+      </div>
+
+      <h1>Complete your donation</h1>
+      <p>Your pledged donation is <strong>${{ pay.amount_display }}</strong> to Rustic Love. Choose how to pay — your payment will be tagged with order code <code>{{ pay.note }}</code> so we can credit it to your order and send a tax receipt after the event.</p>
+
+      <h3 style="margin-top:1.5rem">Or choose a different amount</h3>
+      <div class="tier-grid">
+        {% for t in pay.tiers %}
+          <a class="tier" href="{{ url_for('public.donate', order_code=order_code, amount=t.amount_cents) }}">
+            <div class="name">{{ t.name }}</div>
+            <div class="amt">${{ t.amount_display }}</div>
+          </a>
+        {% endfor %}
+      </div>
+
+      <div class="pay-grid">
+        <div class="pay-card">
+          <h3>Venmo</h3>
+          {% if pay.has_venmo %}
+            <img class="qr" src="{{ pay.venmo_qr }}" alt="Venmo QR code" />
+            <a class="btn btn-primary btn-block" href="{{ pay.venmo_url }}">Open Venmo · ${{ pay.amount_display }}</a>
+            <p class="muted" style="margin-top:0.75rem; font-size:0.85rem">Scan the QR with your phone, or tap the button on mobile.</p>
+          {% else %}
+            <div class="qr-placeholder">Venmo not configured</div>
+            <p class="muted">Add a Venmo handle in Admin → Settings to enable.</p>
+          {% endif %}
+        </div>
+
+        <div class="pay-card">
+          <h3>PayPal</h3>
+          {% if pay.has_paypal %}
+            <img class="qr" src="{{ pay.paypal_qr }}" alt="PayPal QR code" />
+            <a class="btn btn-primary btn-block" href="{{ pay.paypal_url }}">Open PayPal · ${{ pay.amount_display }}</a>
+            <p class="muted" style="margin-top:0.75rem; font-size:0.85rem">Scan the QR with your phone, or tap the button.</p>
+          {% else %}
+            <div class="qr-placeholder">PayPal not configured</div>
+            <p class="muted">Add a PayPal handle in Admin → Settings to enable.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:2rem; justify-content:space-between">
+        <a class="btn btn-secondary" href="{{ url_for('public.order_view', token=order_token) }}">View my order</a>
+        <a class="btn btn-ghost" href="{{ url_for('public.home') }}">I'll donate at the event →</a>
+      </div>
+
+      <p class="hint" style="margin-top:1.5rem">
+        When you send your donation, please include the note <code>{{ pay.note }}</code> (already pre-filled in the buttons above). This lets us match your payment to your order automatically.
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

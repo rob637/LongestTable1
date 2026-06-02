@@ -1,0 +1,184 @@
+{% extends "public/base.html" %}
+{% block content %}
+
+<section class="hero">
+  {% if hero_image %}
+    <div class="hero-bg" style="background-image: url('{{ hero_image.url }}');"></div>
+  {% endif %}
+  <div class="hero-inner container">
+    <div class="eyebrow">{{ event.event_date }} · Vienna, VA</div>
+    <h1>{{ event.hero_headline }}</h1>
+    <p class="lede">{{ event.hero_subhead }}</p>
+    <div class="hero-meta">
+      <div class="item"><span class="k">When</span><span class="v">{{ event.event_date }}</span></div>
+      <div class="item"><span class="k">Time</span><span class="v">{{ event.event_time }}</span></div>
+      <div class="item"><span class="k">Where</span><span class="v">{{ event.event_location }}</span></div>
+    </div>
+    <div class="row" style="justify-content:center">
+      <a class="btn btn-primary" href="{{ url_for('public.register') }}">Reserve a Seat</a>
+      <a class="btn btn-secondary" href="#about">Learn more</a>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="about">
+  <div class="container-sm">
+    <div class="eyebrow center">About the Event</div>
+    <h2 class="center">One long table.<br/>One whole town.</h2>
+    <p style="font-size:1.1rem">{{ event.about_blurb }}</p>
+  </div>
+</section>
+
+{% if progress %}
+<section class="band band-paper2" id="impact">
+  <div class="container-sm">
+    <div class="eyebrow center">Our 2027 goal</div>
+    <h2 class="center">Together so far.</h2>
+    <div class="thermometer">
+      <div class="thermometer-bar">
+        <div class="thermometer-fill" style="width: {{ progress.pct }}%"></div>
+      </div>
+      <div class="thermometer-meta">
+        <div>
+          <span class="big">{{ progress.raised_display }}</span>
+          {% if progress.goal_display %}<span class="muted"> of {{ progress.goal_display }} goal</span>{% endif %}
+        </div>
+        {% if progress.attendee_goal %}
+        <div class="muted">
+          <strong>{{ progress.attendees }}</strong> of {{ progress.attendee_goal }} seats reserved
+        </div>
+        {% endif %}
+      </div>
+      <p class="center muted" style="margin-top:1rem">
+        Every dollar goes to Rustic Love and our local school food pantries.
+      </p>
+      <div class="row" style="justify-content:center; margin-top:1rem">
+        <a class="btn btn-primary" href="{{ url_for('public.register') }}">Reserve a Seat</a>
+        <a class="btn btn-secondary" href="{{ url_for('public.donate_anon') }}">Donate now</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="band band-cream">
+  <div class="container">
+    <div class="eyebrow center">How it works</div>
+    <h2 class="center">A potluck the whole town can join.</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="icon">🪑</span>
+        <h3>Reserve your seats</h3>
+        <p>Sign up your group (up to 8). Registration is free — donations to Rustic Love are deeply appreciated.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon">👋</span>
+        <h3>Meet your Table Captain</h3>
+        <p>We seat you with neighbors and a friendly Captain who coordinates the potluck for your table.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon">🍲</span>
+        <h3>Share a meal</h3>
+        <p>Bring what you're asked to bring, pull up a chair, and break bread with your community on Mill Street.</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon">❤️</span>
+        <h3>Feed our neighbors</h3>
+        <p>Every dollar donated supports Rustic Love and the school food pantries they serve right here in Vienna.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="gallery">
+  <div class="container">
+    <div class="eyebrow center">From last year</div>
+    <h2 class="center">A meal worth remembering.</h2>
+    <div class="gallery">
+      {% if event_photos %}
+        {% for p in event_photos[:8] %}
+          <img src="{{ p.thumb_url or p.url }}" alt="{{ p.alt_text or 'Longest Table Vienna' }}" loading="lazy" />
+        {% endfor %}
+      {% else %}
+        {% for _ in range(4) %}
+          <div class="placeholder">Photo coming soon</div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% if testimonials %}
+<section class="band band-paper2" id="voices">
+  <div class="container">
+    <div class="eyebrow center">Voices from the table</div>
+    <h2 class="center">What neighbors say.</h2>
+    <div class="testimonial-grid">
+      {% for t in testimonials %}
+        <figure class="testimonial">
+          <blockquote>“{{ t.quote }}”</blockquote>
+          <figcaption>
+            <strong>{{ t.author }}</strong>{% if t.role %} <span class="muted">· {{ t.role }}</span>{% endif %}
+          </figcaption>
+        </figure>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="band band-paper2" id="sponsors">
+  <div class="container">
+    <div class="eyebrow center">With gratitude to</div>
+    <h2 class="center">{{ event.sponsors_heading or 'Our sponsors.' }}</h2>
+    <div class="sponsor-wall">
+      {% if sponsors %}
+        {% for s in sponsors %}
+          {% if s.url %}<a class="sponsor-card" href="{{ s.url }}" target="_blank" rel="noopener">{% else %}<div class="sponsor-card">{% endif %}
+            {% if s.logo_url %}
+              <img src="{{ s.logo_url }}" alt="{{ s.name }}" style="max-height:60px; max-width:140px; object-fit:contain" />
+            {% else %}
+              <span>{{ s.name }}{% if s.tier %}<br/><span class="muted" style="font-size:0.8em">{{ s.tier }}</span>{% endif %}</span>
+            {% endif %}
+          {% if s.url %}</a>{% else %}</div>{% endif %}
+        {% endfor %}
+      {% else %}
+        {% for label in ["Sponsorship opportunities available", "Become a Platinum sponsor", "Become a Gold sponsor", "Become a Silver sponsor"] %}
+          <div class="sponsor-card">{{ label }}</div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    {% if event.sponsors_intro %}
+    <p class="center muted" style="margin-top:2rem">
+      {{ event.sponsors_intro }}
+      {% if event.organizer_email %}
+        <a href="mailto:{{ event.organizer_email }}">{{ event.organizer_email }}</a>
+      {% endif %}
+    </p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="band" id="faq">
+  <div class="container-sm">
+    <div class="eyebrow center">Good to know</div>
+    <h2 class="center">Frequently asked.</h2>
+    <div class="stack" style="margin-top:2rem">
+      {% for item in faq %}
+      <details class="card">
+        <summary><strong>{{ item.q }}</strong></summary>
+        <p style="margin-top:0.75rem; white-space:pre-line">{{ item.a }}</p>
+      </details>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="band band-cream">
+  <div class="container-sm center">
+    <h2>Ready to join us at the table?</h2>
+    <a class="btn btn-primary" href="{{ url_for('public.register') }}">Reserve a Seat</a>
+  </div>
+</section>
+
+{% endblock %}

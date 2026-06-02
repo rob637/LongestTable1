@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Longest Table</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <header>
+    <h1>🍽️ Longest Table</h1>
+    <nav>
+      <button class="tab active" data-tab="participants">Participants</button>
+      <button class="tab" data-tab="rules">Rules</button>
+      <button class="tab" data-tab="menu">Menu</button>
+      <button class="tab" data-tab="tables">Tables</button>
+      <button class="tab" data-tab="emails">Emails</button>
+      <button class="tab" data-tab="admin">Admin</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- PARTICIPANTS -->
+    <section id="tab-participants" class="tab-panel active">
+      <div class="toolbar">
+        <input id="search" type="text" placeholder="Search name, email, order #..." />
+        <input id="filter-table" type="number" min="1" placeholder="Table #" />
+        <label class="toolbar-check">Sort by
+          <select id="participant-sort">
+            <option value="table_order">Table, then Order #</option>
+            <option value="order_name">Order #, then Name</option>
+            <option value="last_first">Last name</option>
+            <option value="first_last">First name</option>
+            <option value="captains_first">Captains first</option>
+            <option value="email">Email</option>
+          </select>
+        </label>
+        <label class="toolbar-check"><input id="filter-captains" type="checkbox" /> Captains only</label>
+        <label class="toolbar-check"><input id="filter-missing-email" type="checkbox" /> Missing email</label>
+        <span id="participant-count" class="muted"></span>
+        <div class="spacer"></div>
+        <button id="btn-add">+ Add Person</button>
+      </div>
+      <div class="inline-note">
+        When assignments are locked, edit the Table column here to move people manually. Captain changes and table moves update the Tables view immediately.
+        <span id="participants-status" class="muted"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="participants-table">
+          <thead>
+            <tr>
+              <th>Order #</th>
+              <th>Table</th>
+              <th>First</th>
+              <th>Last</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Age</th>
+              <th>Captain</th>
+              <th>Buyer</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- RULES -->
+    <section id="tab-rules" class="tab-panel">
+      <h2>Rules & Settings</h2>
+      <form id="rules-form" class="rules-form">
+        <label>
+          Seats per table
+          <input type="number" name="seats_per_table" min="1" max="50" />
+        </label>
+        <label>
+          Minimum singles per table
+          <input type="number" name="min_singles_per_table" min="1" max="14" />
+          <small style="display:block;color:#667;font-weight:normal">
+            If a table has any singles, it must have at least this many. Singles are clustered into dedicated tables so nobody sits alone.
+          </small>
+        </label>
+
+        <label>
+          Number of real tables (0 = auto)
+          <input type="number" name="table_count" min="0" max="200" />
+          <small style="display:block;color:#667;font-weight:normal">
+            Auto uses the smallest table count that fits everyone. Enter a larger number if you want more tables used.
+          </small>
+        </label>
+
+        <label>
+          Minimum children together
+          <input type="number" name="min_children_per_table" min="0" max="14" />
+          <small style="display:block;color:#667;font-weight:normal">
+            If a table has children, prefer at least this many together (0 disables).
+          </small>
+        </label>
+        <label>
+          Minimum teens together
+          <input type="number" name="min_teens_per_table" min="0" max="14" />
+          <small style="display:block;color:#667;font-weight:normal">
+            If a table has teens, prefer at least this many together (0 disables).
+          </small>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" name="spread_seniors" />
+          Spread seniors across tables (avoid clustering)
+        </label>
+        <label class="check">
+          <input type="checkbox" name="one_captain_per_table" />
+          One captain per table (warn if missing)
+        </label>
+        <label class="check">
+          <input type="checkbox" name="keep_groups_together" />
+          Keep groups together (same Order #)
+        </label>
+        <label class="check">
+          <input type="checkbox" name="split_oversize_groups" />
+          Split groups larger than table size (with warning)
+        </label>
+        <label class="check">
+          <input type="checkbox" name="spread_evenly" />
+          Spread people evenly across tables
+        </label>
+
+        <div class="actions">
+          <button type="submit">Save Rules</button>
+          <span id="rules-status" class="muted"></span>
+        </div>
+      </form>
+    </section>
+
+    <!-- TABLES -->
+    <section id="tab-tables" class="tab-panel">
+      <div class="toolbar">
+        <button id="btn-generate" class="primary">Generate Assignments</button>
+        <button id="btn-lock" style="display:none">Lock Assignments</button>
+        <button id="btn-unlock" style="display:none" class="danger">Unlock Assignments</button>
+        <a id="btn-export" href="/api/export.csv">Export CSV</a>
+        <div class="spacer"></div>
+        <span id="summary" class="muted"></span>
+      </div>
+      <div id="lock-notice" style="display:none; padding: 0.75rem; background: #fffde7; border: 1px solid #fff59d; border-radius: 4px; margin-bottom: 1rem; color: #827717;">
+        <strong>🔒 Assignments are LOCKED.</strong> Automatic redistribution is disabled. To move people, edit their table number in the Participants tab. 
+      </div>
+      <div id="warnings"></div>
+      <div id="tables-grid" class="tables-grid"></div>
+    </section>
+
+    <!-- MENU -->
+    <section id="tab-menu" class="tab-panel">
+      <h2>Menu / Food Signup Categories</h2>
+      <p class="muted">
+        Define what each table needs (e.g. 2 Main Courses, 3 Sides). Guests
+        sign up for items using the per-table signup link on the Emails tab.
+      </p>
+      <div class="table-wrap">
+        <table id="menu-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Count per table</th>
+              <th>Notes</th>
+              <th>Order</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="actions">
+        <button id="btn-menu-add">+ Add Category</button>
+        <span id="menu-status" class="muted"></span>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section id="tab-admin" class="tab-panel">
+      <h2>Food Signup Oversight</h2>
+      <p class="muted">
+        View food signup coverage by table so gaps can be fixed early.
+      </p>
+      <div class="toolbar">
+        <button id="btn-admin-refresh" class="primary">Refresh Overview</button>
+        <span id="admin-status" class="muted"></span>
+        <div class="spacer"></div>
+        <span id="admin-summary" class="muted"></span>
+      </div>
+      <div id="admin-grid" class="admin-grid"></div>
+    </section>
+
+    <!-- EMAILS -->
+    <section id="tab-emails" class="tab-panel">
+      <h2>Event Settings</h2>
+      <form id="settings-form" class="rules-form">
+        <label>Event name
+          <input type="text" name="event_name" />
+        </label>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <label>Event date
+            <input type="text" name="event_date" />
+          </label>
+          <label>Event time
+            <input type="text" name="event_time" />
+          </label>
+        </div>
+        <label>Event location
+          <input type="text" name="event_location" />
+        </label>
+        <label>Organizer name
+          <input type="text" name="organizer_name" />
+        </label>
+        <label>Organizer email
+          <input type="email" name="organizer_email" />
+        </label>
+        <label>Public base URL (for signup links)
+          <input type="url" name="app_base_url" placeholder="https://your-event-site.example" />
+          <small style="display:block;color:#667;font-weight:normal">
+            Leave blank to use the current browser URL. Set this if you want the
+            links in emails to point to a public / stable address.
+          </small>
+        </label>
+        <div class="actions">
+          <button type="submit">Save Settings</button>
+          <span id="settings-status" class="muted"></span>
+        </div>
+      </form>
+
+      <h2 style="margin-top:2rem">Email Templates &amp; Drafts</h2>
+      <p class="muted">
+        Choose a campaign mode below. Each mode has its own editable templates
+        and per-table drafts. Placeholders: <code>{event_name}</code>,
+        <code>{captain_first}</code>, <code>{table_number}</code>,
+        <code>{attendee_list}</code>, <code>{signup_link}</code>,
+        <code>{menu_summary}</code>, <code>{claimed_food_list}</code>,
+        <code>{guest_email_list}</code>, <code>{organizer_name}</code>.
+      </p>
+      <div class="email-mode-tabs" id="email-mode-tabs">
+        <button class="email-mode-btn active" data-mode="invite">Email Invite <span class="mode-hint">(T-14 to T-10)</span></button>
+        <button class="email-mode-btn" data-mode="reminder">Email Reminder <span class="mode-hint">(T-5 to T-3)</span></button>
+        <button class="email-mode-btn" data-mode="dayof">Email Day Of <span class="mode-hint">(T-1 / morning of)</span></button>
+      </div>
+
+      <div class="email-mode-panels">
+        <div class="email-mode-panel active" data-mode="invite">
+          <h3>Templates — Email Invite</h3>
+          <div class="email-templates" data-mode="invite"></div>
+          <h3 style="margin-top:1.5rem">Per-Table Drafts</h3>
+          <div class="toolbar">
+            <button class="btn-generate-drafts primary" data-mode="invite">Generate Drafts</button>
+            <span class="drafts-status muted" data-mode="invite"></span>
+          </div>
+          <div class="drafts-list" data-mode="invite"></div>
+        </div>
+        <div class="email-mode-panel" data-mode="reminder">
+          <h3>Templates — Email Reminder</h3>
+          <div class="email-templates" data-mode="reminder"></div>
+          <h3 style="margin-top:1.5rem">Per-Table Drafts</h3>
+          <div class="toolbar">
+            <button class="btn-generate-drafts primary" data-mode="reminder">Generate Drafts</button>
+            <span class="drafts-status muted" data-mode="reminder"></span>
+          </div>
+          <div class="drafts-list" data-mode="reminder"></div>
+        </div>
+        <div class="email-mode-panel" data-mode="dayof">
+          <h3>Templates — Email Day Of</h3>
+          <div class="email-templates" data-mode="dayof"></div>
+          <h3 style="margin-top:1.5rem">Per-Table Drafts</h3>
+          <div class="toolbar">
+            <button class="btn-generate-drafts primary" data-mode="dayof">Generate Drafts</button>
+            <span class="drafts-status muted" data-mode="dayof"></span>
+          </div>
+          <div class="drafts-list" data-mode="dayof"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

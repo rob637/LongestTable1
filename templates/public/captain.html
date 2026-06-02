@@ -1,0 +1,273 @@
+{% extends "public/base.html" %}
+{% block title %}Captain dashboard — {{ event.event_name }}{% endblock %}
+{% block content %}
+<section class="band">
+  <div class="container-sm">
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between; align-items:flex-start">
+        <div>
+          <div class="eyebrow">Table Captain</div>
+          <h1 style="margin-bottom:0.25em">Welcome, {{ data.order.buyer_first }}.</h1>
+          <p class="muted">Order {{ data.order.order_code }} · {{ data.order.buyer_email }}</p>
+        </div>
+        {% if table_number %}
+          <div class="thermometer-meta" style="margin:0">
+            <div class="big" style="font-size:2.2rem">Table {{ table_number }}</div>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="hero-meta" style="margin:1.5rem 0">
+        <div class="item"><span class="k">When</span><span class="v">{{ event.event_date }}</span></div>
+        <div class="item"><span class="k">Time</span><span class="v">{{ event.event_time }}</span></div>
+        <div class="item"><span class="k">Where</span><span class="v">{{ event.event_location }}</span></div>
+        <div class="item"><span class="k">Your party</span><span class="v">{{ data.order.party_size }}</span></div>
+      </div>
+    </div>
+
+    {# ── Roster ────────────────────────────────────────────────────────── #}
+    <div class="card">
+      <h3 style="margin-top:0">Your table</h3>
+      {% if not is_locked %}
+        <p class="muted">
+          Final table assignments aren't published yet. Once the committee
+          finalizes seating, your roster (with everyone's name and a way to
+          reach them) will appear here.
+        </p>
+      {% elif not table_number %}
+        <p class="muted">
+          We don't have a table assigned for you yet. Please contact
+          <a href="mailto:{{ event.organizer_email }}">{{ event.organizer_email or event.organizer_name }}</a>.
+        </p>
+      {% elif roster and roster.count %}
+        <p class="muted" style="margin-top:0">
+          {{ roster.count }} guest{{ '' if roster.count == 1 else 's' }} at Table {{ table_number }},
+          across {{ roster.orders|length }} part{{ 'y' if roster.orders|length == 1 else 'ies' }}.
+          <em>You can edit names/contacts, remove cancellations, or pull in Flex Participants below.</em>
+        </p>
+        {% for grp in roster.orders %}
+          <div class="card" style="margin-top:1rem; box-shadow:none; background:var(--paper-2)">
+            <div class="row" style="justify-content:space-between; align-items:baseline">
+              <strong>
+                {{ grp.buyer_first }} {{ grp.buyer_last }}
+                {% if grp.is_captain_order %}<span class="pill pill-confirmed">You</span>{% endif %}
+              </strong>
+              <span class="muted">{{ grp.people|length }} seat{{ '' if grp.people|length == 1 else 's' }}</span>
+            </div>
+            <div class="muted" style="margin:0.25rem 0 0.75rem">
+              {% if grp.buyer_email %}<a href="mailto:{{ grp.buyer_email }}">{{ grp.buyer_email }}</a>{% endif %}
+              {% if grp.buyer_phone %} · {{ grp.buyer_phone }}{% endif %}
+            </div>
+            <ul style="margin:0; padding-left:1.2rem; list-style:none">
+              {% for p in grp.people %}
+                <li style="margin:0.5rem 0">
+                  <div class="row" style="justify-content:space-between; align-items:baseline; gap:0.5rem">
+                    <div>
+                      {{ p.first_name }} {{ p.last_name }}
+                      {% if p.is_captain %} <span class="pill pill-confirmed">Captain</span>{% endif %}
+                      {% if p.age_range and p.age_range != 'Adult' %}
+                        <span class="muted">({{ p.age_range }})</span>
+                      {% endif %}
+                      {% if p.email %}<div class="muted" style="font-size:0.88em">{{ p.email }}{% if p.phone %} · {{ p.phone }}{% endif %}</div>{% endif %}
+                      {% if p.accommodations %}<div class="muted" style="font-size:0.88em">{{ p.accommodations }}</div>{% endif %}
+                    </div>
+                    <details>
+                      <summary class="btn btn-ghost" style="padding:0.2rem 0.6rem; min-height:auto; font-size:0.82rem; list-style:none; cursor:pointer">Edit</summary>
+                      <form method="POST" action="{{ url_for('captain.attendee_save', token=token, pid=p.id) }}" style="margin-top:0.5rem; min-width:260px">
+                        <div class="field-row">
+                          <div class="field"><label>First</label><input name="first_name" value="{{ p.first_name }}" required/></div>
+                          <div class="field"><label>Last</label><input name="last_name" value="{{ p.last_name }}" required/></div>
+                        </div>
+                        <div class="field-row">
+                          <div class="field"><label>Email</label><input name="email" type="email" value="{{ p.email }}"/></div>
+                          <div class="field"><label>Phone</label><input name="phone" type="tel" value="{{ p.phone }}"/></div>
+                        </div>
+                        <div class="field"><label>Age</label>
+                          <select name="age_range">
+                            {% for age in ['Child','Teen','Adult','Senior'] %}
+                              <option value="{{ age }}" {% if (p.age_range or 'Adult') == age %}selected{% endif %}>{{ age }}</option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                        <div class="row" style="gap:0.5rem; margin-top:0.5rem">
+                          <button class="btn btn-primary" style="padding:0.35rem 0.8rem; min-height:auto" type="submit">Save</button>
+                          {% if not p.is_captain %}
+                          <button class="btn btn-ghost" style="padding:0.35rem 0.8rem; min-height:auto" type="submit"
+                                  formaction="{{ url_for('captain.attendee_remove', token=token, pid=p.id) }}"
+                                  formmethod="POST"
+                                  onclick="return confirm('Remove {{ p.first_name }} {{ p.last_name }} from Table {{ table_number }}?')">Remove</button>
+                          {% endif %}
+                        </div>
+                      </form>
+                    </details>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endfor %}
+
+        <div style="margin-top:1.5rem">
+          <a class="btn btn-secondary" href="mailto:?bcc={% for g in roster.orders %}{{ g.buyer_email }}{% if not loop.last %},{% endif %}{% endfor %}&subject=Table {{ table_number }} at {{ event.event_name }}&body=Hi neighbors,%0D%0A%0D%0AI'm {{ data.order.buyer_first }}, your Table Captain for {{ event.event_name }} on {{ event.event_date }}.%0D%0A%0D%0A">
+            Email my whole table
+          </a>
+        </div>
+      {% else %}
+        <p class="muted">Your table is assigned, but the roster is empty.</p>
+      {% endif %}
+    </div>
+
+    {# ── Add a recruit ─────────────────────────────────────────────────── #}
+    {% if table_number %}
+    <div class="card">
+      <h3 style="margin-top:0">Add a recruit</h3>
+      <p class="muted" style="margin-top:0">
+        Bringing a friend or family member? Add them here and they'll be seated at Table {{ table_number }} with you.
+      </p>
+      <form method="POST" action="{{ url_for('captain.recruit_add', token=token) }}">
+        <div class="field-row">
+          <div class="field"><label>First name *</label><input name="first_name" required/></div>
+          <div class="field"><label>Last name *</label><input name="last_name" required/></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Email *</label><input name="email" type="email" required/></div>
+          <div class="field"><label>Phone</label><input name="phone" type="tel"/></div>
+        </div>
+        <div class="field"><label>Age</label>
+          <select name="age_range">
+            {% for age in ['Child','Teen','Adult','Senior'] %}
+              <option value="{{ age }}" {% if age == 'Adult' %}selected{% endif %}>{{ age }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Add to Table {{ table_number }}</button>
+      </form>
+    </div>
+    {% endif %}
+
+    {# ── Flex Participants (formerly waitlist) ─────────────────────────── #}
+    {% if table_number and flex_orders %}
+    <div class="card">
+      <h3 style="margin-top:0">Flex Participants</h3>
+      <p class="muted" style="margin-top:0">
+        Folks who signed up after we hit our seat goal. If your table has open
+        seats from cancellations, pull a party in — they'll get a confirmation email.
+      </p>
+      <table class="data-table">
+        <thead><tr><th>Party</th><th>Email</th><th>Seats</th><th>Signed up</th><th></th></tr></thead>
+        <tbody>
+          {% for f in flex_orders %}
+          <tr>
+            <td><strong>{{ f.buyer_first }} {{ f.buyer_last }}</strong></td>
+            <td class="muted">{{ f.buyer_email }}</td>
+            <td>{{ f.party_size }}</td>
+            <td class="muted">{{ f.created_at }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('captain.flex_pull', token=token, flex_code=f.order_code) }}"
+                    onsubmit="return confirm('Pull {{ f.buyer_first }} {{ f.buyer_last }} ({{ f.party_size }} seat{{ '' if f.party_size == 1 else 's' }}) to Table {{ table_number }}?')">
+                <button class="btn btn-primary" style="padding:0.35rem 0.8rem; min-height:auto" type="submit">Pull to my table</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {# ── Potluck board ───────────────────────────────────────────────── #}
+    {% if table_number and categories %}
+    <div class="card">
+      <h3 style="margin-top:0">Potluck signup board</h3>
+      <p class="muted" style="margin-top:0">
+        Add what each guest is bringing. Aim to fill every slot before event day.
+      </p>
+
+      {% for c in categories %}
+        {% set claimed = sigs_by_cat.get(c.id, []) %}
+        {% set need = c.per_table_count or 0 %}
+        {% set complete = need and (claimed|length) >= need %}
+        <div class="card" style="margin-top:1rem; box-shadow:none; background:var(--paper-2)">
+          <div class="row" style="justify-content:space-between; align-items:baseline">
+            <strong>{{ c.name }}</strong>
+            <span class="pill {{ 'pill-confirmed' if complete else 'pill-waitlist' }}">
+              {{ claimed|length }}{% if need %} of {{ need }}{% endif %} filled
+            </span>
+          </div>
+          {% if c.notes %}<div class="muted" style="font-size:0.9em">{{ c.notes }}</div>{% endif %}
+          {% if claimed %}
+          <ul style="margin:0.5rem 0 0; padding-left:1.2rem">
+            {% for s in claimed %}
+              <li style="margin:0.25rem 0">
+                <strong>{{ s.person_name }}</strong>{% if s.item_description %} — {{ s.item_description }}{% endif %}
+                <form method="POST" action="{{ url_for('captain.potluck_delete', token=token, sig_id=s.id) }}" style="display:inline" onsubmit="return confirm('Remove this signup?')">
+                  <button class="btn btn-ghost" style="padding:0.15rem 0.5rem; min-height:auto; font-size:0.85rem">Remove</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <form method="POST" action="{{ url_for('captain.potluck_add', token=token) }}" style="margin-top:1.25rem">
+        <div class="row" style="gap:0.5rem; flex-wrap:wrap; align-items:flex-end">
+          <div class="field" style="flex:1; min-width:160px">
+            <label>Category</label>
+            <select name="category_id" required>
+              {% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field" style="flex:1; min-width:160px">
+            <label>Who's bringing it</label>
+            <input type="text" name="person_name" required placeholder="Jane Smith"/>
+          </div>
+          <div class="field" style="flex:2; min-width:200px">
+            <label>What they're bringing</label>
+            <input type="text" name="item_description" placeholder="Grandma's potato salad"/>
+          </div>
+          <button class="btn btn-primary" type="submit">Add</button>
+        </div>
+      </form>
+    </div>
+    {% elif table_number and not categories %}
+    <div class="card">
+      <h3 style="margin-top:0">Potluck signup board</h3>
+      <p class="muted">No potluck categories have been set up yet — the committee will publish them soon.</p>
+    </div>
+    {% endif %}
+
+    {# ── Invite & manage ──────────────────────────────────────────────── #}
+    <div class="card">
+      <h3 style="margin-top:0">Invite guests to join you</h3>
+      <p>Share this link with neighbors and friends so they can register and ask to be seated with you.</p>
+      <div class="field" style="margin-top:0.75rem">
+        <input type="text" readonly value="{{ invite_url }}" onclick="this.select()" style="font-family:var(--font-mono); font-size:0.95rem"/>
+      </div>
+      <p class="muted">Tip: ask them to mention your name in the "Anything we should know?" field when they register so we seat them at Table {{ table_number or '—' }} with you.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Your party</h3>
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Age</th><th>Accom.</th></tr></thead>
+        <tbody>
+          {% for a in data.attendees %}
+          <tr>
+            <td>{{ a.first_name }} {{ a.last_name }}{% if a.is_captain %} <span class="pill pill-confirmed">Captain</span>{% endif %}</td>
+            <td>{{ a.age_range or '—' }}</td>
+            <td>{{ a.accommodations or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="row" style="margin-top:1.25rem; gap:0.75rem; flex-wrap:wrap">
+        <a class="btn btn-primary" href="{{ url_for('public.donate', order_code=data.order.order_code) }}">Donate / Show QR</a>
+        <a class="btn btn-secondary" href="{{ url_for('public.order_view', token=donate_token) }}">Manage your order</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
