@@ -220,6 +220,7 @@ DEFAULT_SETTINGS = {
     "fundraising_goal_cents": "1500000",   # $15,000 default
     "attendee_goal": "300",
     "show_thermometer": "1",
+    "sponsor_levels_json": "",   # JSON array of {name, amount_display, benefits:[], featured?}
     "faq_json": json.dumps([
         {"q": "Is the event free?",
          "a": "Yes. Registration is free. We do ask each attendee to consider a $10 (or more) donation to Rustic Love — every dollar goes to food-insecure families in our area."},

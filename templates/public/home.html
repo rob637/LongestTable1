@@ -190,6 +190,63 @@
   </div>
 </section>
 
+<section class="band" id="become-a-sponsor">
+  <div class="container-sm">
+    <div class="eyebrow center">Support the table</div>
+    <h2 class="center">Become a sponsor.</h2>
+    <p class="center" style="font-size:1.05rem; max-width:34rem; margin:0 auto 2.5rem; color:var(--ink-soft)">
+      Sponsoring The Longest Table Vienna puts your name in front of the whole community — on the table itself, on our event site, and in every email we send. Every dollar supports Rustic Love and our school food pantries.
+    </p>
+
+    {% if sponsor_levels %}
+    <div class="feature-grid" style="margin-bottom:2.5rem">
+      {% for lvl in sponsor_levels %}
+      <div class="feature-card" style="text-align:center; position:relative">
+        {% if lvl.featured %}<div style="position:absolute; top:-1px; left:50%; transform:translateX(-50%); background:var(--terracotta); color:#fff; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:0.2rem 0.85rem; border-radius:0 0 var(--radius-sm) var(--radius-sm)">Most popular</div>{% endif %}
+        <div style="font-family:var(--font-serif); font-size:1.4rem; font-weight:700; margin:{% if lvl.featured %}1.5rem{% else %}0{% endif %} 0 0.1rem">{{ lvl.name }}</div>
+        <div style="font-size:2rem; font-weight:700; color:var(--terracotta); margin-bottom:0.4rem">{{ lvl.amount_display }}</div>
+        <ul style="list-style:none; padding:0; margin:0 0 1.25rem; color:var(--ink-soft); font-size:0.92rem; text-align:left">
+          {% for b in lvl.benefits %}
+          <li style="padding:0.2rem 0; border-bottom:1px solid var(--line)">✓ {{ b }}</li>
+          {% endfor %}
+        </ul>
+        <a class="btn {% if lvl.featured %}btn-primary{% else %}btn-secondary{% endif %} btn-block"
+           href="mailto:{{ event.organizer_email }}?subject=Sponsorship+interest+—+{{ lvl.name }}+%24{{ lvl.amount_display }}&body=Hi%2C%0A%0AI'm+interested+in+becoming+a+{{ lvl.name }}+sponsor+for+The+Longest+Table+Vienna.%0A%0APlease+tell+me+more.%0A%0AThanks">
+          Become a {{ lvl.name }} sponsor
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="feature-grid" style="margin-bottom:2.5rem">
+      <div class="feature-card" style="text-align:center">
+        <div style="font-family:var(--font-serif); font-size:1.4rem; font-weight:700; margin-bottom:0.2rem">Platinum</div>
+        <div style="font-size:2rem; font-weight:700; color:var(--terracotta); margin-bottom:0.75rem">$1,000</div>
+        <p class="muted" style="font-size:0.92rem">Premier logo on the event banner, homepage, and all outbound emails. Named acknowledgment at the table.</p>
+      </div>
+      <div class="feature-card" style="text-align:center; border-color:var(--terracotta)">
+        <div style="font-family:var(--font-serif); font-size:1.4rem; font-weight:700; margin-bottom:0.2rem">Gold</div>
+        <div style="font-size:2rem; font-weight:700; color:var(--terracotta); margin-bottom:0.75rem">$500</div>
+        <p class="muted" style="font-size:0.92rem">Logo on the homepage sponsor wall and event program. Shoutout in our email to all {{ event.attendee_goal or '300' }}+ registered guests.</p>
+      </div>
+      <div class="feature-card" style="text-align:center">
+        <div style="font-family:var(--font-serif); font-size:1.4rem; font-weight:700; margin-bottom:0.2rem">Silver</div>
+        <div style="font-size:2rem; font-weight:700; color:var(--terracotta); margin-bottom:0.75rem">$250</div>
+        <p class="muted" style="font-size:0.92rem">Name listed on the sponsor wall and in the event program. Our sincere thanks from the whole community.</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <div style="text-align:center">
+      <p class="muted" style="margin-bottom:1rem">Questions? Want a custom package? Just reach out.</p>
+      <a class="btn btn-primary"
+         href="mailto:{{ event.organizer_email }}?subject=Sponsorship+inquiry+—+The+Longest+Table+Vienna">
+        Contact us about sponsoring
+      </a>
+    </div>
+  </div>
+</section>
+
 <section class="band" id="faq">
   <div class="container-sm">
     <div class="eyebrow center">Good to know</div>

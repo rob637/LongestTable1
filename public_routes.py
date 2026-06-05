@@ -79,7 +79,7 @@ def _event_settings():
         "admin_emails", "fundraising_goal_cents", "attendee_goal",
         "show_thermometer", "max_attendees",
         "faq_json", "sponsors_json", "sponsors_heading", "sponsors_intro",
-        "testimonials_json", "site_og_image_url",
+        "testimonials_json", "site_og_image_url", "sponsor_levels_json",
     ]
     out = {}
     for k in keys:
@@ -109,6 +109,10 @@ def _event_settings():
         out["testimonials"] = json.loads(out.get("testimonials_json") or "[]") or []
     except (TypeError, ValueError):
         out["testimonials"] = []
+    try:
+        out["sponsor_levels"] = json.loads(out.get("sponsor_levels_json") or "[]") or []
+    except (TypeError, ValueError):
+        out["sponsor_levels"] = []
     return out
 
 
@@ -157,6 +161,7 @@ def home():
         sponsors=event.get("sponsors", []),
         faq=event.get("faq", []),
         testimonials=event.get("testimonials", []),
+        sponsor_levels=event.get("sponsor_levels", []),
         progress=progress,
     )
 

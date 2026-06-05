@@ -336,6 +336,7 @@ def settings_save():
         "fundraising_goal_cents", "attendee_goal",
         "registration_opens", "registration_closes",
         "captain_registration_opens", "captain_registration_closes",
+        "sponsor_levels_json",
     }
     for k in editable:
         if k in request.form:

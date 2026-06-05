@@ -82,6 +82,13 @@
     <div class="field"><label>Admin emails (comma-separated)</label><input name="admin_emails" value="{{ s.admin_emails }}"/></div>
   </div>
 
+  <div class="card">
+    <h3>Sponsor levels ("Become a Sponsor" section)</h3>
+    <p class="hint">Optional. JSON array of tiers shown on the public homepage. Leave blank to use the built-in Platinum / Gold / Silver defaults. Example:<br/>
+    <code>[{"name":"Platinum","amount_display":"$1,000","featured":true,"benefits":["Logo on banner","Homepage listing"]},{"name":"Gold","amount_display":"$500","featured":false,"benefits":["Homepage listing"]}]</code></p>
+    <div class="field"><label>Sponsor levels JSON</label><textarea name="sponsor_levels_json" rows="5" style="font-family:monospace; font-size:0.85rem">{{ s.sponsor_levels_json }}</textarea></div>
+  </div>
+
   <button class="btn btn-primary" style="margin-top:1.5rem">Save settings</button>
 </form>
 {% endblock %}
