@@ -14,6 +14,8 @@ from seed import seed
 app = Flask(__name__)
 CORS(app)
 
+APP_VERSION = "1.3.0"
+
 # Structured logging + global error handler (Cloud Run-aware)
 import logging_setup
 logging_setup.configure(app)
@@ -41,7 +43,7 @@ app.register_blueprint(captain_bp)
 from auth import get_csrf_token
 @app.context_processor
 def _inject_csrf():
-    return {"csrf_token": get_csrf_token}
+    return {"csrf_token": get_csrf_token, "app_version": APP_VERSION}
 
 # Custom error pages
 @app.errorhandler(404)
