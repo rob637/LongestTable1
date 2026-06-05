@@ -11,7 +11,7 @@ import time
 import traceback
 import uuid
 
-from flask import g, request
+from flask import g, request, render_template
 
 
 _LEVEL_TO_SEVERITY = {
@@ -124,7 +124,10 @@ def configure(app):
         if isinstance(e, HTTPException):
             return e
         logging.getLogger("app").exception("Unhandled exception: %s", e)
-        return ("Internal Server Error", 500)
+        try:
+            return render_template("errors/500.html"), 500
+        except Exception:  # noqa: BLE001
+            return ("Internal Server Error", 500)
 
     logging.getLogger("app").info(
         "Logging configured (cloud_run=%s, project=%s)", on_cloud_run, project_id or "-"

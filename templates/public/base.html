@@ -41,6 +41,9 @@
         <a href="{{ url_for('public.donate_anon') }}">Donate</a>
         <a href="{{ url_for('public.register') }}" class="nav-cta">Reserve a Seat</a>
       </nav>
+      <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </header>
 
@@ -66,5 +69,36 @@
     </div>
   </footer>
   {% block scripts %}{% endblock %}
+  <script>
+    /* ── Mobile nav toggle ── */
+    (function () {
+      var btn = document.getElementById('nav-hamburger');
+      var header = btn && btn.closest('.site-header');
+      if (btn && header) {
+        btn.addEventListener('click', function () {
+          var open = header.classList.toggle('nav-open');
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+        document.addEventListener('click', function (e) {
+          if (header.classList.contains('nav-open') && !header.contains(e.target)) {
+            header.classList.remove('nav-open');
+            btn.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+    })();
+    /* ── Double-submit guard ── */
+    document.querySelectorAll('form:not([data-no-submit-guard])').forEach(function (form) {
+      form.addEventListener('submit', function () {
+        var btn = form.querySelector('[type="submit"]:not([data-no-guard])');
+        if (!btn || btn.dataset.submitting) return;
+        btn.dataset.submitting = '1';
+        btn.disabled = true;
+        var orig = btn.textContent;
+        btn.textContent = 'Please wait\u2026';
+        setTimeout(function () { btn.disabled = false; btn.textContent = orig; delete btn.dataset.submitting; }, 15000);
+      });
+    });
+  </script>
 </body>
 </html>

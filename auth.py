@@ -4,7 +4,9 @@ Magic links are short-lived signed tokens. We sign them with the
 secret_key stored in settings so the secret survives restarts.
 """
 import functools
+import hmac
 import os
+import secrets
 
 from flask import abort, request, redirect, url_for, session
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
@@ -60,3 +62,20 @@ def require_admin(view):
             return redirect(url_for("public.admin_login", next=request.path))
         return view(*args, **kwargs)
     return wrapped
+
+
+# ── CSRF (simple session-token approach, no extra deps) ─────────────────────
+
+def get_csrf_token() -> str:
+    """Return (and lazily create) the session CSRF token."""
+    if "_csrf" not in session:
+        session["_csrf"] = secrets.token_hex(32)
+    return session["_csrf"]
+
+
+def validate_csrf(token: str) -> bool:
+    """Constant-time comparison against the session token."""
+    expected = session.get("_csrf", "")
+    if not expected or not token:
+        return False
+    return hmac.compare_digest(expected, token)

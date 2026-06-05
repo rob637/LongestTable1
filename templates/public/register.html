@@ -13,21 +13,33 @@
       <h1 style="margin-bottom:0.25em">Reserve your seats</h1>
       <p class="muted">{{ event.event_date }} · {{ event.event_time }} · {{ event.event_location }}</p>
 
-      {% if seats_remaining is not none and seats_remaining == 0 %}
-        <div class="banner" style="background:#fef3c7; border:1px solid #f5d271; padding:1rem; border-radius:var(--radius-sm); margin:1rem 0">
-          <strong>Seats are full — but you can still join as a Flex Participant.</strong>
-          There will be a seat for you at the long table; your specific table
-          assignment will be finalized a few days before the event, or sooner
-          if a Table Captain pulls you in.
+      {% if registration_gate == 'before' %}
+        <div class="banner" style="background:#e7f3ff; border:1px solid #90bce8; padding:1rem; border-radius:var(--radius-sm); margin:1rem 0">
+          <strong>Registration opens on {{ registration_gate_date }}.</strong>
+          Check back then to reserve your seats.
         </div>
-      {% elif seats_remaining is not none and seats_remaining <= 30 %}
-        <div class="banner" style="background:#fef3c7; border:1px solid #f5d271; padding:1rem; border-radius:var(--radius-sm); margin:1rem 0">
-          <strong>Only {{ seats_remaining }} seat{{ '' if seats_remaining == 1 else 's' }} left.</strong>
-          Sign up now to lock in your seats.
+      {% elif registration_gate == 'closed' %}
+        <div class="banner" style="background:#fde8e2; border:1px solid #f3b6a4; color:#6b1f0d; padding:1rem; border-radius:var(--radius-sm); margin:1rem 0">
+          <strong>Registration is now closed.</strong>
+          Contact <a href="mailto:{{ event.organizer_email }}">{{ event.organizer_email or event.organizer_name }}</a> if you have questions.
         </div>
-      {% endif %}
+      {% else %}
+        {% if seats_remaining is not none and seats_remaining == 0 %}
+          <div class="banner" style="background:#fef3c7; border:1px solid #f5d271; padding:1rem; border-radius:var(--radius-sm); margin:1rem 0">
+            <strong>Seats are full — but you can still join as a Flex Participant.</strong>
+            There will be a seat for you at the long table; your specific table
+            assignment will be finalized a few days before the event, or sooner
+            if a Table Captain pulls you in.
+          </div>
+        {% elif seats_remaining is not none and seats_remaining <= 30 %}
+          <div class="banner" style="background:#fef3c7; border:1px solid #f5d271; padding:1rem; border-radius:var(--radius-sm); margin:1rem 0">
+            <strong>Only {{ seats_remaining }} seat{{ '' if seats_remaining == 1 else 's' }} left.</strong>
+            Sign up now to lock in your seats.
+          </div>
+        {% endif %}
 
       <form method="POST" action="{{ url_for('public.register') }}" id="reg-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}" />
         <h3 style="margin-top:1.5rem">Who's coming?</h3>
         <p class="hint">Please add a row for each person joining. Up to {{ event.max_per_order }} per order. All fields are required so your Table Captain can reach each attendee.</p>
 
@@ -88,7 +100,7 @@
           <button type="submit" class="btn btn-primary btn-block">Continue to donation</button>
         </div>
       </form>
-    </div>
+      {% endif %}
   </div>
 </section>
 

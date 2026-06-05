@@ -1,0 +1,47 @@
+{% extends "admin/base.html" %}
+{% block title %}Email Log — Admin{% endblock %}
+{% block content %}
+<h1>Email Log</h1>
+<p class="muted">Last 200 emails sent (or logged) by the app. In dev mode all emails are logged here even without a Resend key.</p>
+
+{% if not logs %}
+  <div class="banner">No emails logged yet.</div>
+{% else %}
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>When (UTC)</th>
+          <th>Status</th>
+          <th>To</th>
+          <th>Subject</th>
+          <th>Template</th>
+          <th>Error</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in logs %}
+        <tr>
+          <td style="white-space:nowrap; font-size:0.85rem">{{ (e.sent_at or '')[:19] }}</td>
+          <td>
+            {% if e.status == 'sent' %}
+              <span class="pill pill-confirmed">sent</span>
+            {% elif e.status == 'logged' %}
+              <span class="pill" style="background:var(--cream); color:var(--ink-soft)">dev/logged</span>
+            {% elif e.status == 'error' %}
+              <span class="pill pill-cancelled">error</span>
+            {% else %}
+              <span class="pill" style="background:var(--cream)">{{ e.status or '?' }}</span>
+            {% endif %}
+          </td>
+          <td style="font-size:0.9rem">{{ e.to_email }}</td>
+          <td style="font-size:0.9rem; max-width:280px">{{ e.subject }}</td>
+          <td style="font-size:0.82rem; color:var(--ink-soft)">{{ e.template or '—' }}</td>
+          <td style="font-size:0.82rem; color:#a04030; max-width:260px; word-break:break-all">{{ e.error or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}

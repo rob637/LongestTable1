@@ -4,6 +4,7 @@ import io
 import json
 import os
 import time
+from datetime import date as _date
 
 from flask import (Blueprint, render_template, request, redirect, url_for,
                    flash, abort, session, Response)
@@ -187,9 +188,23 @@ def sitemap_xml():
     return Response(xml, mimetype="application/xml")
 
 
+def _registration_gate():
+    """Return ('open'|'before'|'closed', date_str) based on registration_opens/closes settings."""
+    today = _date.today().isoformat()
+    opens = (store.get_setting("registration_opens") or "").strip()
+    closes = (store.get_setting("registration_closes") or "").strip()
+    if opens and today < opens:
+        return "before", opens
+    if closes and today > closes:
+        return "closed", closes
+    return "open", None
+
+
 @bp.route("/register", methods=["GET", "POST"])
 def register():
     event = _event_settings()
+    gate, gate_date = _registration_gate()
+
     if request.method == "GET":
         max_a = event.get("max_attendees", 0)
         seats_remaining = None
@@ -202,7 +217,18 @@ def register():
             default_pledge_dollars=int(event["default_donation_per_attendee_cents"] / 100),
             default_donation_per_attendee_cents=event["default_donation_per_attendee_cents"],
             seats_remaining=seats_remaining,
+            registration_gate=gate,
+            registration_gate_date=gate_date,
         )
+
+    # POST — validate CSRF first
+    if not auth.validate_csrf(request.form.get("_csrf", "")):
+        abort(400)
+
+    # Block submissions if registration window is closed
+    if gate != "open":
+        flash("Registration is not currently open.", "error")
+        return redirect(url_for("public.register"))
 
     form = request.form
     firsts = form.getlist("att_first[]")

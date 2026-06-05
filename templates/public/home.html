@@ -1,4 +1,35 @@
 {% extends "public/base.html" %}
+{% block head_extra %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": {{ event.event_name | tojson }},
+  "description": {{ event.event_tagline | tojson }},
+  "startDate": {{ event.event_date | tojson }},
+  "location": {
+    "@type": "Place",
+    "name": {{ event.event_location | tojson }},
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Vienna",
+      "addressRegion": "VA",
+      "addressCountry": "US"
+    }
+  },
+  "organizer": {
+    "@type": "Organization",
+    "name": {{ event.organizer_name | tojson }},
+    "email": {{ event.organizer_email | tojson }}
+  },
+  "eventStatus": "https://schema.org/EventScheduled",
+  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+  "isAccessibleForFree": true,
+  "url": {{ canonical_url | tojson }}{% if og_image_url %},
+  "image": {{ og_image_url | tojson }}{% endif %}
+}
+</script>
+{% endblock %}
 {% block content %}
 
 <section class="hero">
@@ -32,7 +63,7 @@
 {% if progress %}
 <section class="band band-paper2" id="impact">
   <div class="container-sm">
-    <div class="eyebrow center">Our 2027 goal</div>
+    <div class="eyebrow center">Our {{ event.event_year }} goal</div>
     <h2 class="center">Together so far.</h2>
     <div class="thermometer">
       <div class="thermometer-bar">

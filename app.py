@@ -37,6 +37,21 @@ app.register_blueprint(public_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(captain_bp)
 
+# CSRF token available in all templates
+from auth import get_csrf_token
+@app.context_processor
+def _inject_csrf():
+    return {"csrf_token": get_csrf_token}
+
+# Custom error pages
+@app.errorhandler(404)
+def _page_not_found(e):
+    return render_template("errors/404.html"), 404
+
+@app.errorhandler(403)
+def _forbidden(e):
+    return render_template("errors/404.html"), 403  # treat 403 same as 404 for UX
+
 
 def _format_phone(raw):
     """Normalize a phone string to (XXX) XXX-XXXX for US numbers; leave others alone."""

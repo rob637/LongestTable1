@@ -1074,6 +1074,25 @@ def log_email(*, to_email, subject, body, template="", status="", error=None):
         conn.close()
 
 
+def list_email_log(limit: int = 200):
+    """Return the most recent `limit` email log entries, newest first."""
+    if USE_FIRESTORE:
+        rows = []
+        for d in _col("email_log").stream():
+            r = d.to_dict() or {}
+            r["id"] = int(d.id) if d.id.isdigit() else d.id
+            rows.append(r)
+        rows.sort(key=lambda r: r.get("sent_at") or "", reverse=True)
+        return rows[:limit]
+    else:
+        conn = _get_db()
+        rows = [dict(r) for r in conn.execute(
+            "SELECT * FROM email_log ORDER BY sent_at DESC LIMIT ?", (limit,)
+        ).fetchall()]
+        conn.close()
+        return rows
+
+
 # ── Captain helpers ─────────────────────────────────────────────────────────
 
 def find_captain_orders_by_email(email: str):

@@ -23,6 +23,19 @@
   </div>
 
   <div class="card">
+    <h3>Registration window</h3>
+    <p class="hint">Leave both fields blank to keep registration always open. Use <code>YYYY-MM-DD</code> format.</p>
+    <div class="field-row">
+      <div class="field"><label>Registration opens (date)</label><input name="registration_opens" value="{{ s.registration_opens }}" placeholder="2027-03-01"/></div>
+      <div class="field"><label>Registration closes (date)</label><input name="registration_closes" value="{{ s.registration_closes }}" placeholder="2027-04-30"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Captain reg opens (date)</label><input name="captain_registration_opens" value="{{ s.captain_registration_opens }}" placeholder="2027-02-01"/></div>
+      <div class="field"><label>Captain reg closes (date)</label><input name="captain_registration_closes" value="{{ s.captain_registration_closes }}" placeholder="2027-04-15"/></div>
+    </div>
+  </div>
+
+  <div class="card">
     <h3>Registration</h3>
     <div class="field-row">
       <div class="field"><label>Max per order</label><input name="max_per_order" type="number" value="{{ s.max_per_order }}"/></div>

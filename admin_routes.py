@@ -334,6 +334,8 @@ def settings_save():
         "venmo_handle", "venmo_url", "organizer_name", "organizer_email",
         "from_email", "reply_to_email", "app_base_url", "admin_emails",
         "fundraising_goal_cents", "attendee_goal",
+        "registration_opens", "registration_closes",
+        "captain_registration_opens", "captain_registration_closes",
     }
     for k in editable:
         if k in request.form:
@@ -491,6 +493,21 @@ def sponsors_crm_promote(sid):
     store.update_sponsor_prospect(sid, {"on_public_wall": 1})
     flash(f"{new_entry['name']} {'updated on' if replaced else 'added to'} the public wall.", "success")
     return redirect(url_for("admin.sponsors_crm"))
+
+
+# ── Email log ────────────────────────────────────────────────────────────
+
+@bp.route("/email-log")
+@require_admin
+def email_log():
+    logs = store.list_email_log(limit=200)
+    return render_template(
+        "admin/email_log.html",
+        active="email_log",
+        admin_email=current_admin_email(),
+        event=_event(),
+        logs=logs,
+    )
 
 
 # ── Bridge to the existing table-assigner UI ────────────────────────────
